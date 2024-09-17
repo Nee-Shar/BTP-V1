@@ -48,3 +48,9 @@ export default tseslint.config({
   },
 })
 ```
+
+
+
+### REFER THESE API REFRENCES :
+
+https://docs.pinata.cloud/api-reference/endpoint/list-files
