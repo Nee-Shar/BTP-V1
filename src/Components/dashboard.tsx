@@ -11,7 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import axios from "axios";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
@@ -22,6 +22,14 @@ import {
   CardTitle,
 } from "./ui/card";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -31,7 +39,6 @@ import {
 } from "./ui/dropdown-menu";
 import { Input } from "./ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { Label } from "./ui/label";
 import {
   Dialog,
   DialogContent,
@@ -41,19 +48,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import toast, { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from "react-hot-toast";
 
-export const description =
-  "A products dashboard with a sidebar navigation and a main content area. The dashboard has a header with a search input and a user menu. The sidebar has a logo, navigation as, and a card with a call to action. The main content area shows an empty state with a call to action.";
-// const pinata = new PinataSDK({
-//   pinataJwt: import.meta.env.VITE_JWT,
-//   pinataGateway: "pinata.cloud",
-// });
+interface FileData {
+  ipfs_pin_hash: string;
+  size: number;
+  date_pinned: string;
+  metadata: {
+    name: string;
+  };
+}
+
+
+
 export default function Dashboard() {
   const [productName, setProductName] = useState("");
-  const [productPrice, setProductPrice] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+ 
+  const [files, setFiles] = useState<FileData[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(true); 
 
   // Handle file selection
   const handleFileChange = (e: any) => {
@@ -73,23 +87,11 @@ export default function Dashboard() {
     }
 
     try {
-      // Create formData for file and metadata
       const formData = new FormData();
       formData.append("file", file);
-      formData.append(
-        "pinataMetadata",
-        JSON.stringify({
-          name: productName,
-        })
-      );
-      formData.append(
-        "pinataOptions",
-        JSON.stringify({
-          cidVersion: 1,
-        })
-      );
+      formData.append("pinataMetadata", JSON.stringify({ name: productName }));
+      formData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
 
-      // Upload the file to Pinata
       const upload = await axios.post(
         "https://api.pinata.cloud/pinning/pinFileToIPFS",
         formData,
@@ -101,16 +103,9 @@ export default function Dashboard() {
       );
       console.log("File uploaded:", upload.data);
 
-      // Add further actions (e.g., saving product details to your database)
-      console.log("Product added:", {
-        productName,
-        productPrice,
-        fileUrl: upload.data.IpfsHash,
-      });
-      toast.success('Successfully toasted!')
-      // Reset the form after submission
+      toast.success("Product added successfully!");
+
       setProductName("");
-      setProductPrice("");
       setFile(null);
     } catch (error) {
       console.error("File upload failed:", error);
@@ -119,57 +114,78 @@ export default function Dashboard() {
     }
   };
 
+  const fetchFiles = async () => {
+    setLoadingFiles(true);
+    try {
+      const response = await axios.get(
+        "https://api.pinata.cloud/data/pinList?status=pinned",
+        {
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_JWT}`,
+          },
+        }
+      );
+      setFiles(response.data.rows);
+      console.log("Files fetched:", response.data.rows);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFiles();
+  }, [file]);
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <Toaster/>
+      <Toaster />
       <div className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <a href="/" className="flex items-center gap-2 font-semibold">
               <Package2 className="h-6 w-6" />
-              <span className="">Acme Inc</span>
+              <span>Acme Inc</span>
             </a>
             <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
               <Bell className="h-4 w-4" />
-              <span className="sr-only">Toggle notifications</span>
             </Button>
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               <a
                 href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
               >
                 <Home className="h-4 w-4" />
                 Dashboard
               </a>
               <a
                 href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
               >
                 <ShoppingCart className="h-4 w-4" />
                 Orders
-                <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                  6
-                </Badge>
+                <Badge className="ml-auto h-6 w-6 rounded-full">6</Badge>
               </a>
               <a
                 href="#"
-                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
+                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary"
               >
                 <Package className="h-4 w-4" />
-                Products{" "}
+                Products
               </a>
               <a
                 href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
               >
                 <Users className="h-4 w-4" />
                 Customers
               </a>
               <a
                 href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
               >
                 <LineChart className="h-4 w-4" />
                 Analytics
@@ -177,7 +193,7 @@ export default function Dashboard() {
             </nav>
           </div>
           <div className="mt-auto p-4">
-            <Card x-chunk="dashboard-02-chunk-0">
+            <Card>
               <CardHeader className="p-2 pt-0 md:p-4">
                 <CardTitle>Upgrade to Pro</CardTitle>
                 <CardDescription>
@@ -204,7 +220,6 @@ export default function Dashboard() {
                 className="shrink-0 md:hidden"
               >
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
@@ -214,63 +229,17 @@ export default function Dashboard() {
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
                   <Package2 className="h-6 w-6" />
-                  <span className="sr-only">Acme Inc</span>
+                  Acme Inc
                 </a>
                 <a
                   href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Home className="h-5 w-5" />
-                  Dashboard
-                </a>
-                <a
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground"
+                  className="flex items-center gap-4 rounded-xl bg-muted px-3 py-2"
                 >
                   <ShoppingCart className="h-5 w-5" />
                   Orders
-                  <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                    6
-                  </Badge>
                 </a>
-                <a
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Package className="h-5 w-5" />
-                  Products
-                </a>
-                <a
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Users className="h-5 w-5" />
-                  Customers
-                </a>
-                <a
-                  href="#"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                >
-                  <LineChart className="h-5 w-5" />
-                  Analytics
-                </a>
+                {/* Add more navigation links here */}
               </nav>
-              <div className="mt-auto">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Upgrade to Pro</CardTitle>
-                    <CardDescription>
-                      Unlock all features and get unlimited access to our
-                      support team.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button size="sm" className="w-full">
-                      Upgrade
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
@@ -280,7 +249,7 @@ export default function Dashboard() {
                 <Input
                   type="search"
                   placeholder="Search products..."
-                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+                  className="w-full bg-background pl-8"
                 />
               </div>
             </form>
@@ -289,7 +258,6 @@ export default function Dashboard() {
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <CircleUser className="h-5 w-5" />
-                <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -302,23 +270,50 @@ export default function Dashboard() {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <main className="flex flex-1 flex-col gap-4 p-4">
           <div className="flex items-center">
             <h1 className="text-lg font-semibold md:text-2xl">Inventory</h1>
           </div>
-          <div
-            className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm"
-            x-chunk="dashboard-02-chunk-1"
-          >
+          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
             <div className="flex flex-col items-center gap-1 text-center">
               <h3 className="text-2xl font-bold tracking-tight">
-                You have no products
+                List of your recent uploads
               </h3>
-              <p className="text-sm text-muted-foreground">
-                You can start selling as soon as you add a product.
-              </p>
-              {/* Dialog component for Add Product */}
-              {/* Dialog component for Add Product */}
+                <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>File Name</TableHead>
+                  <TableHead>Size</TableHead>
+                  <TableHead>Upload Date</TableHead>
+                  <TableHead>Link</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loadingFiles ? (
+                  <TableRow>
+                    <TableCell colSpan={3}>Loading...</TableCell>
+                  </TableRow>
+                ) : (
+                  files.map((file) => (
+                    <TableRow key={file.ipfs_pin_hash}>
+                      <TableCell>{file.metadata.name}</TableCell>
+                      <TableCell>{file.size} bytes</TableCell>
+                      <TableCell>{file.date_pinned}</TableCell>
+                      <TableCell>
+                  <a
+                    href={`https://gateway.pinata.cloud/ipfs/${file.ipfs_pin_hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View File
+                  </a>
+                </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+
               <Dialog>
                 <DialogTrigger asChild>
                   <Button className="mt-4">Add Product</Button>
@@ -331,39 +326,19 @@ export default function Dashboard() {
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleAddProduct} className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="productName" className="text-right">
-                        Product Name
-                      </Label>
+                    <div className="flex flex-col gap-2">
                       <Input
-                        id="productName"
+                        placeholder="Product Name"
                         value={productName}
                         onChange={(e) => setProductName(e.target.value)}
-                        placeholder="Enter product name"
-                        className="col-span-3"
+                        required
                       />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="productPrice" className="text-right">
-                        Price
-                      </Label>
+                      
                       <Input
-                        id="productPrice"
-                        value={productPrice}
-                        onChange={(e) => setProductPrice(e.target.value)}
-                        placeholder="Enter product price"
-                        className="col-span-3"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="fileUpload" className="text-right">
-                        Upload File
-                      </Label>
-                      <Input
-                        id="fileUpload"
                         type="file"
                         onChange={handleFileChange}
-                        className="col-span-3"
+                        accept="image/*"
+                        required
                       />
                     </div>
                     <DialogFooter>
