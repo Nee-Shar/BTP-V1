@@ -4,23 +4,22 @@ import {
   Home,
   LineChart,
   Menu,
-  Package,
   Package2,
   Search,
   ShoppingCart,
   Users,
 } from "lucide-react";
 import axios from "axios";
-import { useState,useEffect } from "react";
-import { Badge } from "./ui/badge";
+import { useState, useEffect } from "react";
+// import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "./ui/card";
 import {
   Table,
   TableBody,
@@ -59,15 +58,13 @@ interface FileData {
   };
 }
 
-
-
 export default function Dashboard() {
   const [productName, setProductName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
- 
+
   const [files, setFiles] = useState<FileData[]>([]);
-  const [loadingFiles, setLoadingFiles] = useState(true); 
+  const [loadingFiles, setLoadingFiles] = useState(true);
 
   // Handle file selection
   const handleFileChange = (e: any) => {
@@ -76,6 +73,7 @@ export default function Dashboard() {
   };
 
   // Handle form submission and file upload to Pinata
+  // Handle form submission and send the file to the backend for encryption and upload to Pinata
   const handleAddProduct = async (e: any) => {
     e.preventDefault();
     setUploading(true);
@@ -88,13 +86,35 @@ export default function Dashboard() {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("pinataMetadata", JSON.stringify({ name: productName }));
-      formData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
+      formData.append("image", file); // send file to the backend
+      formData.append(
+        "key",
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      ); // send encryption key (you can generate this dynamically as needed)
+
+      // Send the file to the backend for encryption
+      const response = await axios.post(
+        "http://localhost:3000/encrypt",
+        formData
+      );
+
+      const { encrypted, iv } = response.data;
+      console.log("Encrypted data:", encrypted, iv);
+      // Send encrypted data to Pinata
+      const pinataFormData = new FormData();
+      pinataFormData.append(
+        "file",
+        new Blob([encrypted], { type: "text/plain" })
+      ); // Encrypted file as a Blob
+      pinataFormData.append(
+        "pinataMetadata",
+        JSON.stringify({ name: productName })
+      );
+      pinataFormData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
 
       const upload = await axios.post(
         "https://api.pinata.cloud/pinning/pinFileToIPFS",
-        formData,
+        pinataFormData,
         {
           headers: {
             Authorization: `Bearer ${import.meta.env.VITE_JWT}`,
@@ -136,7 +156,56 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchFiles();
-  }, [file]);
+  }, []);
+
+  const handleViewFile = async (ipfsHash: string, fileName: string) => {
+    try {
+      // Fetch the encrypted file from IPFS as plain text
+      const fileResponse = await axios.get(
+        `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
+        { responseType: "text" } // Fetch as plain text
+      );
+      console.log(fileName);
+      // Prepare form data for decryption
+      const formData = new FormData();
+      formData.append("encryptedFile", fileResponse.data); // Raw text, no conversion
+      formData.append(
+        "key",
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      );
+      formData.append("iv", "2YqxTCrPwUAxI3+YoqeDvA==");
+
+      // Send the encrypted file to the backend for decryption
+      const decryptResponse = await axios.post(
+        "http://localhost:3000/decrypt",
+        formData,
+        { responseType: "blob" } // Expect binary (Blob) data back
+      );
+
+      // Create a URL for the decrypted Blob (image)
+      const decryptedBlob = new Blob([decryptResponse.data], {
+        type: "image/jpeg",
+      });
+      const url = URL.createObjectURL(decryptedBlob);
+
+      // Create an <img> element to display the image
+      const img = document.createElement("img");
+      img.src = url;
+      img.style.width = "100%"; // Ensure the image takes up full width
+      img.style.height = "auto"; // Maintain aspect ratio
+
+      // Open a new window and write the image into it
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.body.appendChild(img);
+      } else {
+        alert("Failed to open new window.");
+      }
+    } catch (error) {
+      console.error("Error decrypting the file:", error);
+      toast.error("Error decrypting the file");
+    }
+  };
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -146,7 +215,7 @@ export default function Dashboard() {
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <a href="/" className="flex items-center gap-2 font-semibold">
               <Package2 className="h-6 w-6" />
-              <span>Acme Inc</span>
+              <span>BTP V1</span>
             </a>
             <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
               <Bell className="h-4 w-4" />
@@ -156,7 +225,7 @@ export default function Dashboard() {
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               <a
                 href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
+                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary"
               >
                 <Home className="h-4 w-4" />
                 Dashboard
@@ -167,15 +236,8 @@ export default function Dashboard() {
               >
                 <ShoppingCart className="h-4 w-4" />
                 Orders
-                <Badge className="ml-auto h-6 w-6 rounded-full">6</Badge>
               </a>
-              <a
-                href="#"
-                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary"
-              >
-                <Package className="h-4 w-4" />
-                Products
-              </a>
+
               <a
                 href="#"
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
@@ -193,7 +255,7 @@ export default function Dashboard() {
             </nav>
           </div>
           <div className="mt-auto p-4">
-            <Card>
+            {/* <Card>
               <CardHeader className="p-2 pt-0 md:p-4">
                 <CardTitle>Upgrade to Pro</CardTitle>
                 <CardDescription>
@@ -206,7 +268,7 @@ export default function Dashboard() {
                   Upgrade
                 </Button>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
       </div>
@@ -272,68 +334,71 @@ export default function Dashboard() {
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4">
           <div className="flex items-center">
-            <h1 className="text-lg font-semibold md:text-2xl">Inventory</h1>
+            <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
           </div>
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
             <div className="flex flex-col items-center gap-1 text-center">
               <h3 className="text-2xl font-bold tracking-tight">
                 List of your recent uploads
               </h3>
-                <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>File Name</TableHead>
-                  <TableHead>Size</TableHead>
-                  <TableHead>Upload Date</TableHead>
-                  <TableHead>Link</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loadingFiles ? (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={3}>Loading...</TableCell>
+                    <TableHead>File Name</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead>Upload Date</TableHead>
+                    <TableHead>Link</TableHead>
                   </TableRow>
-                ) : (
-                  files.map((file) => (
-                    <TableRow key={file.ipfs_pin_hash}>
-                      <TableCell>{file.metadata.name}</TableCell>
-                      <TableCell>{file.size} bytes</TableCell>
-                      <TableCell>{file.date_pinned}</TableCell>
-                      <TableCell>
-                  <a
-                    href={`https://gateway.pinata.cloud/ipfs/${file.ipfs_pin_hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    View File
-                  </a>
-                </TableCell>
+                </TableHeader>
+                <TableBody>
+                  {loadingFiles ? (
+                    <TableRow>
+                      <TableCell colSpan={3}>Loading...</TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    files.map((file) => (
+                      <TableRow key={file.ipfs_pin_hash}>
+                        <TableCell>{file.metadata.name}</TableCell>
+                        <TableCell>{file.size} bytes</TableCell>
+                        <TableCell>{file.date_pinned}</TableCell>
+                        <TableCell>
+                          <Button
+                            onClick={() =>
+                              handleViewFile(
+                                file.ipfs_pin_hash,
+                                file.metadata.name
+                              )
+                            }
+                          >
+                            View File
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button className="mt-4">Add Product</Button>
+                  <Button className="mt-4">Add a new file</Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
-                    <DialogTitle>Add a new product</DialogTitle>
+                    <DialogTitle>Add a new file</DialogTitle>
                     <DialogDescription>
-                      Fill out the form and upload a file to add a new product.
+                      Fill out the form and upload a file .
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleAddProduct} className="grid gap-4 py-4">
                     <div className="flex flex-col gap-2">
                       <Input
-                        placeholder="Product Name"
+                        placeholder="File Name"
                         value={productName}
                         onChange={(e) => setProductName(e.target.value)}
                         required
                       />
-                      
+
                       <Input
                         type="file"
                         onChange={handleFileChange}

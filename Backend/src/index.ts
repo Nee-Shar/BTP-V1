@@ -1,15 +1,15 @@
 import express, { Request, Response } from "express";
 import crypto from "crypto";
-import multer from "multer"; // Middleware for handling multipart/form-data (e.g., file uploads).
+import multer from "multer";
 import cors from "cors";
 
 const app = express();
-const upload = multer();
-const algorithm = "aes-256-gcm"; // Harsh here we may try diff algo in future for now its aes-256-gcm
+const upload = multer(); // Handling file uploads with multer
+const algorithm = "aes-256-gcm";
 
 app.use(
   cors({
-    origin: "http://localhost:5173", //  frontend URL
+    origin: "http://localhost:5173", // Your frontend URL
     methods: "GET,POST,PUT,DELETE",
     credentials: true,
   })
@@ -40,40 +40,80 @@ app.post("/encrypt", upload.single("image"), (req: Request, res: Response) => {
 });
 
 // Decryption route
-app.post("/decrypt", express.json(), (req: Request, res: Response) => {
-  const { encryptedData, key, iv } = req.body;
-  console.log(key, iv);
-  if (!encryptedData || !key || !iv) {
+// app.post("/decrypt", upload.none(), (req: Request, res: Response) => {
+//   const { key, iv, encryptedFile } = req.body; // Directly retrieve the base64-encoded encrypted file
+//   if (!encryptedFile || !key || !iv) {
+//     return res.status(400).json({ error: "Missing required fields" });
+//   }
+
+//   try {
+//     const keyBuffer = Buffer.from(key, "hex"); // Convert key to buffer
+//     const ivBuffer = Buffer.from(iv, "base64"); // Convert IV to buffer
+
+//     // Convert encryptedFile from base64 back to its original binary form
+//     const encryptedBuffer = Buffer.from(encryptedFile, "base64");
+
+//     // Extract the last 16 bytes as the authentication tag
+//     const authTag = encryptedBuffer.slice(-16);
+
+//     // Extract the encrypted content without the authentication tag
+//     const encryptedContent = encryptedBuffer.slice(0, -16);
+
+//     // Initialize the decipher with AES-GCM and the IV
+//     const decipher = crypto.createDecipheriv(algorithm, keyBuffer, ivBuffer);
+//     decipher.setAuthTag(authTag); // Set the authentication tag
+
+//     // Decrypt the content
+//     const decrypted = Buffer.concat([
+//       decipher.update(encryptedContent),
+//       decipher.final(),
+//     ]);
+
+//     // Send the decrypted data as a base64 string or plain text depending on its original content
+//     res.send(decrypted.toString("utf8")); // Assuming you're expecting plain text
+//   } catch (error) {
+//     console.error("Decryption error:", error);
+//     res.status(500).json({ error: "Decryption failed" });
+//   }
+// });
+
+app.post("/decrypt", upload.none(), (req: Request, res: Response) => {
+  const { key, iv, encryptedFile } = req.body;
+
+  if (!encryptedFile || !key || !iv) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
-    const encryptedBuffer = Buffer.from(encryptedData, "base64");
+    const keyBuffer = Buffer.from(key, "hex");
     const ivBuffer = Buffer.from(iv, "base64");
 
-    // Extract the authentication tag from the encrypted data
-    const authTag = encryptedBuffer.slice(-16); // Last 16 bytes are the authentication tag
-    const encryptedBufferWithoutTag = encryptedBuffer.slice(0, -16);
+    // Convert encryptedFile from base64 back to its binary form
+    const encryptedBuffer = Buffer.from(encryptedFile, "base64");
 
-    const decipher = crypto.createDecipheriv(
-      algorithm,
-      Buffer.from(key, "hex"),
-      ivBuffer
-    );
+    // Extract the last 16 bytes as the authentication tag
+    const authTag = encryptedBuffer.slice(-16);
+    const encryptedContent = encryptedBuffer.slice(0, -16);
 
-    decipher.setAuthTag(authTag); // Set the authentication tag
+    // Initialize the decipher with AES-GCM and IV
+    const decipher = crypto.createDecipheriv(algorithm, keyBuffer, ivBuffer);
+    decipher.setAuthTag(authTag);
 
+    // Decrypt the binary content
     const decrypted = Buffer.concat([
-      decipher.update(encryptedBufferWithoutTag),
+      decipher.update(encryptedContent),
       decipher.final(),
     ]);
 
-    res.json({ image: decrypted.toString("base64") });
+    // Set response headers to indicate binary content
+    res.setHeader("Content-Type", "image/jpeg");
+    res.send(decrypted); // Send binary data
   } catch (error) {
     console.error("Decryption error:", error);
     res.status(500).json({ error: "Decryption failed" });
   }
 });
+
 
 // Start the server
 app.listen(3000, () => {
