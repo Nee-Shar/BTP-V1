@@ -7,19 +7,14 @@ import {
   Package2,
   Search,
   ShoppingCart,
+  Key,
   Users,
 } from "lucide-react";
 import axios from "axios";
 import { useState, useEffect } from "react";
-// import { Badge } from "./ui/badge";
+
 import { Button } from "./ui/button";
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardHeader,
-//   CardTitle,
-// } from "./ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   Table,
   TableBody,
@@ -56,18 +51,25 @@ export default function Dashboard() {
   const [productName, setProductName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-
+  const [imageURL, setImageURL] = useState("");
+  const [name, setName] = useState("");
   const [files, setFiles] = useState<FileData[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(true);
 
-  // Handle file selection
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("sb-lbhauoweqnshaojwsesx-auth-token");
+    localStorage.removeItem("avatar_url");
+    localStorage.removeItem("Name");
+    window.location.href = "/login";
+  };
+
   const handleFileChange = (e: any) => {
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
   };
 
-  // Handle form submission and file upload to Pinata
-  // Handle form submission and send the file to the backend for encryption and upload to Pinata
   const handleAddProduct = async (e: any) => {
     e.preventDefault();
     setUploading(true);
@@ -114,9 +116,9 @@ export default function Dashboard() {
       console.log("File uploaded:", upload.data.IpfsHash);
 
       // Step 2: Insert the CID into the "File Access Table" after a successful upload
-      const cid = upload.data.IpfsHash; // Assuming the response contains the CID
+      const cid = upload.data.IpfsHash;
       const { error: insertError } = await supabase
-        .from("File Access Table") // Make sure this matches your actual table name
+        .from("File Access Table")
         .insert([{ id: 1, CID: cid }]); // Insert the CID with a fixed id of 1
 
       if (insertError) {
@@ -128,7 +130,7 @@ export default function Dashboard() {
 
       //Step 3 : Add the encryption key and IV to the "CID and ENCRYPTION KEY" table
       const { error: insertError2 } = await supabase
-        .from("CID and ENCRYPTION KEY") // Make sure this matches your actual table name
+        .from("CID and ENCRYPTION KEY")
         .insert([{ cid: cid, Encryption_Key: key, IV: iv }]); // Insert the CID with a fixed id of 1
 
       if (insertError2) {
@@ -139,6 +141,7 @@ export default function Dashboard() {
       // Reset form
       setProductName("");
       setFile(null);
+      fetchFiles();
     } catch (error) {
       console.error("File upload failed:", error);
       toast.error("File upload failed.");
@@ -168,18 +171,21 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    setImageURL(localStorage.getItem("avatar_url") || "");
+    setName(localStorage.getItem("Name") || "");
+
     fetchFiles();
   }, []);
 
   const handleViewFile = async (ipfsHash: string, fileName: string) => {
     try {
       // Step 2: Fetch key and IV from Supabase using the CID
-      console.log(fileName,ipfsHash);
+      console.log(fileName, ipfsHash);
       const { data: encryptionData, error } = await supabase
-        .from("CID and ENCRYPTION KEY") // Table name
-        .select("Encryption_Key, IV") // Use correct column names
-        .eq("cid", ipfsHash) 
-        .single(); // Fetch single row where CID matches
+        .from("CID and ENCRYPTION KEY")
+        .select("Encryption_Key, IV")
+        .eq("cid", ipfsHash)
+        .single();
 
       if (error || !encryptionData) {
         console.error("Error fetching key and IV:", error);
@@ -187,7 +193,7 @@ export default function Dashboard() {
         return;
       }
 
-      const { Encryption_Key: key, IV: iv } = encryptionData; // Destructure with correct names
+      const { Encryption_Key: key, IV: iv } = encryptionData;
 
       // Step 3: Fetch the encrypted file from IPFS as plain text
       const fileResponse = await axios.get(
@@ -197,7 +203,7 @@ export default function Dashboard() {
 
       // Step 4: Prepare form data for decryption
       const formData = new FormData();
-      formData.append("encryptedFile", fileResponse.data); // Raw text, no conversion
+      formData.append("encryptedFile", fileResponse.data);
       formData.append("key", key); // Use the fetched key from Supabase
       formData.append("iv", iv); // Use the fetched IV from Supabase
 
@@ -217,8 +223,12 @@ export default function Dashboard() {
       // Step 7: Create an <img> element to display the image
       const img = document.createElement("img");
       img.src = url;
-      img.style.width = "100%"; // Ensure the image takes up full width
+      img.style.width = "80%"; // Adjust image width
       img.style.height = "auto"; // Maintain aspect ratio
+      img.style.display = "block"; // Remove inline space and ensure block-level element
+      img.style.margin = "20px auto"; // Center the image and add some space around it
+      img.style.borderRadius = "8px"; // Optional: Make corners rounded
+      img.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)"; // Optional: Add a subtle shadow for better visuals
 
       // Step 8: Open a new window and write the image into it
       const newWindow = window.open();
@@ -240,7 +250,7 @@ export default function Dashboard() {
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <a href="/" className="flex items-center gap-2 font-semibold">
-              <Package2 className="h-6 w-6" />
+              <Key className="h-6 w-6" />
               <span>BTP V1</span>
             </a>
             <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
@@ -345,7 +355,10 @@ export default function Dashboard() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
-                <CircleUser className="h-5 w-5" />
+                <Avatar>
+                  <AvatarImage src={imageURL} alt="@shadcn" />
+                  <AvatarFallback>CN</AvatarFallback>
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -354,7 +367,7 @@ export default function Dashboard() {
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -362,8 +375,8 @@ export default function Dashboard() {
           <div className="flex items-center">
             <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
           </div>
-          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-            <div className="flex flex-col items-center gap-1 text-center">
+          <div className="flex flex-1 items-center justify-center rounded-lg border border-solid shadow-md">
+            <div className="flex flex-col items-center gap-3 text-center">
               <h3 className="text-2xl font-bold tracking-tight">
                 List of your recent uploads
               </h3>
@@ -373,6 +386,7 @@ export default function Dashboard() {
                     <TableHead>File Name</TableHead>
                     <TableHead>Size</TableHead>
                     <TableHead>Upload Date</TableHead>
+                    <TableHead>CID</TableHead>
                     <TableHead>Link</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -387,6 +401,10 @@ export default function Dashboard() {
                         <TableCell>{file.metadata.name}</TableCell>
                         <TableCell>{file.size} bytes</TableCell>
                         <TableCell>{file.date_pinned}</TableCell>
+
+                        <TableCell>
+                          {file.ipfs_pin_hash.slice(0, 10)}...
+                        </TableCell>
                         <TableCell>
                           <Button
                             onClick={() =>

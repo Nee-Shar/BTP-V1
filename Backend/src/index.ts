@@ -31,8 +31,8 @@ app.post(
       // Step 1: Fetch key and IV from Supabase
       const { data: userData, error } = await supabase
         .from("Users") // Your table name
-        .select("Encryption_Key, IV") // Columns you want to fetch
-        .eq("id", id) // Assuming `id` is the identifier in the Users table
+        .select("Encryption_Key, IV")
+        .eq("id", id) 
         .single(); // Fetch single row
 
       if (error || !userData) {
@@ -66,6 +66,8 @@ app.post(
     }
   }
 );
+
+
 
 app.post("/decrypt", upload.none(), (req: Request, res: Response) => {
   const { key, iv, encryptedFile } = req.body;
@@ -104,7 +106,16 @@ app.post("/decrypt", upload.none(), (req: Request, res: Response) => {
   }
 });
 
+
+//Test Route 
+app.get("/hello", (req: Request, res: Response) => {
+  res.send("Hello from the server");
+});
+
+
+
 // Start the server
 app.listen(3000, () => {
   console.log("Server running on port 3000");
 });
+
