@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect,useRef } from "react";
 
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -54,6 +54,7 @@ export default function Dashboard() {
   const [name, setName] = useState("");
   const [files, setFiles] = useState<FileData[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -69,85 +70,142 @@ export default function Dashboard() {
     setFile(selectedFile);
   };
 
-  const handleAddProduct = async (e: any) => {
+  
+  const handleAddFile = async (e: any) => {
     e.preventDefault();
     setUploading(true);
-
+    
+    //check if file is uploaded or not
     if (!file) {
       alert("Please select a file to upload.");
       setUploading(false);
       return;
     }
 
+
     try {
+
+      //Prepare data to send to backend, File, UserId,FileName
       const formData = new FormData();
+
       formData.append("image", file); // send file to the backend
       formData.append("id", "1"); // send id of the user who uploaded the file
-      // Send the file to the backend for encryption
-      const response = await axios.post(
-        "http://localhost:3000/encrypt",
-        formData
-      );
+      formData.append("productName",productName);
+      
 
-      const { encrypted, iv, key } = response.data;
-      console.log("Encrypted data:", iv, key);
-      // Send encrypted data to Pinata
-      const pinataFormData = new FormData();
-      pinataFormData.append(
-        "file",
-        new Blob([encrypted], { type: "text/plain" })
-      ); // Encrypted file as a Blob
-      pinataFormData.append(
-        "pinataMetadata",
-        JSON.stringify({ name: productName })
-      );
-      pinataFormData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
-
-      const upload = await axios.post(
-        "https://api.pinata.cloud/pinning/pinFileToIPFS",
-        pinataFormData,
-        {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_JWT}`,
-          },
-        }
-      );
-      console.log("File uploaded:", upload.data.IpfsHash);
-
-      // Step 2: Insert the CID into the "File Access Table" after a successful upload
-      const cid = upload.data.IpfsHash;
-      const { error: insertError } = await supabase
-        .from("File Access Table")
-        .insert([{ id: 1, CID: cid }]); // Insert the CID with a fixed id of 1
-
-      if (insertError) {
-        console.error("Error inserting data into Supabase:", insertError);
-        toast.error("Failed to insert data into Supabase.");
-      } else {
-        toast.success("Product added successfully!");
+      try{
+        const response = await axios.post(
+          "http://localhost:3000/encrypt",
+          formData
+        );
+        
+        console.log(response);
+        toast.success("File Uploaded!");
+      } catch(err){
+        console.error("Error occured while uploading",err);
       }
 
-      //Step 3 : Add the encryption key and IV to the "CID and ENCRYPTION KEY" table
-      const { error: insertError2 } = await supabase
-        .from("CID and ENCRYPTION KEY")
-        .insert([{ cid: cid, Encryption_Key: key, IV: iv }]); // Insert the CID with a fixed id of 1
-
-      if (insertError2) {
-        console.error("Error inserting data into Supabase:", insertError2);
-        toast.error("Failed to insert data into Supabase.");
-      }
-
-      // Reset form
-      setProductName("");
-      setFile(null);
-      fetchFiles();
     } catch (error) {
       console.error("File upload failed:", error);
       toast.error("File upload failed.");
     } finally {
+      // Reset form
       setUploading(false);
+      setProductName("");
+      setFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''; // Clear the file input field
+      }
+      fetchFiles();
     }
   };
+
+  // const handleAddProduct = async (e: any) => {
+  //   e.preventDefault();
+  //   setUploading(true);
+    
+  //   //check if file is uploaded or not
+  //   if (!file) {
+  //     alert("Please select a file to upload.");
+  //     setUploading(false);
+  //     return;
+  //   }
+
+
+  //   try {
+  //     const formData = new FormData();
+
+  //     formData.append("image", file); // send file to the backend
+  //     formData.append("id", "1"); // send id of the user who uploaded the file
+
+  //     // Send the file to the backend for encryption
+  //     const response = await axios.post(
+  //       "http://localhost:3000/encrypt",
+  //       formData
+  //     );
+      
+  //     // backend responds with key iv and encrypted data
+  //     const { encrypted, iv, key } = response.data;
+  //     console.log("Encrypted data:", iv, key);
+
+  //     // Send encrypted data to Pinata
+  //     const pinataFormData = new FormData();
+  //     pinataFormData.append(
+  //       "file",
+  //       new Blob([encrypted], { type: "text/plain" })
+  //     ); // Encrypted file as a Blob
+  //     pinataFormData.append(
+  //       "pinataMetadata",
+  //       JSON.stringify({ name: productName })
+  //     );
+  //     pinataFormData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
+
+  //     //upload response from posting data on pinata
+  //     const upload = await axios.post(
+  //       "https://api.pinata.cloud/pinning/pinFileToIPFS",
+  //       pinataFormData,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${import.meta.env.VITE_JWT}`,
+  //         },
+  //       }
+  //     );
+  //     console.log("File uploaded:", upload.data.IpfsHash);
+
+  //     // Step 2: Insert the CID into the "File Access Table" after a successful upload
+  //     const cid = upload.data.IpfsHash;
+  //     const { error: insertError } = await supabase
+  //       .from("File Access Table")
+  //       .insert([{ id: 1, CID: cid }]); // Insert the CID with a fixed id of 1
+
+  //     if (insertError) {
+  //       console.error("Error inserting data into Supabase:", insertError);
+  //       toast.error("Failed to insert data into Supabase.");
+  //     } else {
+  //       toast.success("Product added successfully!");
+  //     }
+
+  //     //Step 3 : Add the encryption key and IV to the "CID and ENCRYPTION KEY" table
+  //     const { error: insertError2 } = await supabase
+  //       .from("CID and ENCRYPTION KEY")
+  //       .insert([{ cid: cid, Encryption_Key: key, IV: iv }]); // Insert the CID with a fixed id of 1
+
+  //     if (insertError2) {
+  //       console.error("Error inserting data into Supabase:", insertError2);
+  //       toast.error("Failed to insert data into Supabase.");
+  //     }
+
+  //     // Reset form
+  //     setProductName("");
+  //     setFile(null);
+  //     fetchFiles();
+  //   } catch (error) {
+  //     console.error("File upload failed:", error);
+  //     toast.error("File upload failed.");
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
 
   const fetchFiles = async () => {
     setLoadingFiles(true);
@@ -178,35 +236,44 @@ export default function Dashboard() {
 
   const handleViewFile = async (ipfsHash: string, fileName: string) => {
     try {
+
       // Step 2: Fetch key and IV from Supabase using the CID
-      console.log(fileName, ipfsHash);
-      const { data: encryptionData, error } = await supabase
-        .from("CID and ENCRYPTION KEY")
-        .select("Encryption_Key, IV")
-        .eq("cid", ipfsHash)
-        .single();
+      // console.log(fileName, ipfsHash);
+      // const { data: encryptionData, error } = await supabase
+      //   .from("CID and ENCRYPTION KEY")
+      //   .select("Encryption_Key, IV")
+      //   .eq("cid", ipfsHash)
+      //   .single();
+      // // separate error handling for error while retrieval or access not available
+      // if (error || !encryptionData) {
+      //   console.error("Error fetching key and IV:", error);
+      //   toast.error("Error fetching key and IV");
+      //   return;
+      // }
 
-      if (error || !encryptionData) {
-        console.error("Error fetching key and IV:", error);
-        toast.error("Error fetching key and IV");
-        return;
-      }
+      // const { Encryption_Key: key, IV: iv } = encryptionData;
 
-      const { Encryption_Key: key, IV: iv } = encryptionData;
+      // // Step 3: Fetch the encrypted file from IPFS as plain text
+      // const fileResponse = await axios.get(
+      //   `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
+      //   { responseType: "text" } // Fetch as plain text
+      // );
 
-      // Step 3: Fetch the encrypted file from IPFS as plain text
-      const fileResponse = await axios.get(
-        `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
-        { responseType: "text" } // Fetch as plain text
-      );
-
-      // Step 4: Prepare form data for decryption
-      const formData = new FormData();
-      formData.append("encryptedFile", fileResponse.data);
-      formData.append("key", key); // Use the fetched key from Supabase
-      formData.append("iv", iv); // Use the fetched IV from Supabase
+      // // Step 4: Prepare form data for decryption
+      // const formData = new FormData();
+      // formData.append("encryptedFile", fileResponse.data);
+      // formData.append("key", key); // Use the fetched key from Supabase
+      // formData.append("iv", iv); // Use the fetched IV from Supabase
 
       // Step 5: Send the encrypted file to the backend for decryption
+
+
+      // Send to backend, ipfsHash and id
+      const formData = new FormData();
+
+      formData.append("cid", ipfsHash); // send file to the backend
+      formData.append("id", "1"); // send id of the user who uploaded the file
+
       const decryptResponse = await axios.post(
         "http://localhost:3000/decrypt",
         formData,
@@ -433,7 +500,7 @@ export default function Dashboard() {
                       Fill out the form and upload a file .
                     </DialogDescription>
                   </DialogHeader>
-                  <form onSubmit={handleAddProduct} className="grid gap-4 py-4">
+                  <form onSubmit={handleAddFile} className="grid gap-4 py-4">
                     <div className="flex flex-col gap-2">
                       <Input
                         placeholder="File Name"
@@ -445,6 +512,7 @@ export default function Dashboard() {
                       <Input
                         type="file"
                         onChange={handleFileChange}
+                        ref={fileInputRef}
                         accept="image/*"
                         required
                       />
