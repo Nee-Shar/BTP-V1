@@ -1,6 +1,5 @@
 import {
   Bell,
-  CircleUser,
   Home,
   LineChart,
   Menu,
@@ -173,7 +172,7 @@ export default function Dashboard() {
   useEffect(() => {
     setImageURL(localStorage.getItem("avatar_url") || "");
     setName(localStorage.getItem("Name") || "");
-
+    console.log("Name:", name);
     fetchFiles();
   }, []);
 
