@@ -21,3 +21,9 @@
    (Frontend runs at http://localhost:5173)
 
 8. Go to localhost:5173 in your browser , use github credentials to login
+
+## TO DO's
+
+1. Make fetchfiles in backend fetching acc to user id (currently fetching all files from frontend)
+2. Make differnt users in db.
+3. Make encry/decry of .txt files (using AES).
