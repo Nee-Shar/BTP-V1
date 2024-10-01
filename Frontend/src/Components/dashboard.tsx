@@ -234,7 +234,7 @@ export default function Dashboard() {
     fetchFiles();
   }, []);
 
-  const handleViewFile = async (ipfsHash: string, fileName: string) => {
+  const handleViewFile = async (ipfsHash: string) => {
     try {
 
       // Step 2: Fetch key and IV from Supabase using the CID
@@ -475,8 +475,7 @@ export default function Dashboard() {
                           <Button
                             onClick={() =>
                               handleViewFile(
-                                file.ipfs_pin_hash,
-                                file.metadata.name
+                                file.ipfs_pin_hash
                               )
                             }
                           >
