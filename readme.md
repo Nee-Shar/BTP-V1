@@ -20,7 +20,7 @@
 
    (Frontend runs at http://localhost:5173)
 
-8. Go to localhost:5173 in your browser , use github credentials to login
+8. Go to localhost:5173 in your browser , use github credentials to login.
 
 ## TO DO's
 
