@@ -5,10 +5,8 @@ export interface cidAndEncryptionKey {
 }
 
 export interface FileData {
-    ipfs_pin_hash: string;
-    size: number;
-    date_pinned: string;
-    metadata: {
-      name: string;
-    };
+  CID:string;
+  fileName:string;
+  fileSize:string;
+  Date_of_upload:string;
   }

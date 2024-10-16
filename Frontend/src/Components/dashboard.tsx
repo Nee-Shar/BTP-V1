@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import axios from "axios";
-import { useState, useEffect,useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -70,11 +70,10 @@ export default function Dashboard() {
     setFile(selectedFile);
   };
 
-  
   const handleAddFile = async (e: any) => {
     e.preventDefault();
     setUploading(true);
-    
+
     //check if file is uploaded or not
     if (!file) {
       alert("Please select a file to upload.");
@@ -82,29 +81,25 @@ export default function Dashboard() {
       return;
     }
 
-
     try {
-
       //Prepare data to send to backend, File, UserId,FileName
       const formData = new FormData();
 
       formData.append("image", file); // send file to the backend
       formData.append("id", "1"); // send id of the user who uploaded the file
-      formData.append("productName",productName);
-      
+      formData.append("productName", productName);
 
-      try{
+      try {
         const response = await axios.post(
           "http://localhost:3000/encrypt",
           formData
         );
-        
+
         console.log(response);
         toast.success("File Uploaded!");
-      } catch(err){
-        console.error("Error occured while uploading",err);
+      } catch (err) {
+        console.error("Error occured while uploading", err);
       }
-
     } catch (error) {
       console.error("File upload failed:", error);
       toast.error("File upload failed.");
@@ -114,129 +109,39 @@ export default function Dashboard() {
       setProductName("");
       setFile(null);
       if (fileInputRef.current) {
-        fileInputRef.current.value = ''; // Clear the file input field
+        fileInputRef.current.value = ""; // Clear the file input field
       }
       fetchFiles();
     }
   };
 
-  // const handleAddProduct = async (e: any) => {
-  //   e.preventDefault();
-  //   setUploading(true);
-    
-  //   //check if file is uploaded or not
-  //   if (!file) {
-  //     alert("Please select a file to upload.");
-  //     setUploading(false);
-  //     return;
-  //   }
-
-
-  //   try {
-  //     const formData = new FormData();
-
-  //     formData.append("image", file); // send file to the backend
-  //     formData.append("id", "1"); // send id of the user who uploaded the file
-
-  //     // Send the file to the backend for encryption
-  //     const response = await axios.post(
-  //       "http://localhost:3000/encrypt",
-  //       formData
-  //     );
-      
-  //     // backend responds with key iv and encrypted data
-  //     const { encrypted, iv, key } = response.data;
-  //     console.log("Encrypted data:", iv, key);
-
-  //     // Send encrypted data to Pinata
-  //     const pinataFormData = new FormData();
-  //     pinataFormData.append(
-  //       "file",
-  //       new Blob([encrypted], { type: "text/plain" })
-  //     ); // Encrypted file as a Blob
-  //     pinataFormData.append(
-  //       "pinataMetadata",
-  //       JSON.stringify({ name: productName })
-  //     );
-  //     pinataFormData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
-
-  //     //upload response from posting data on pinata
-  //     const upload = await axios.post(
-  //       "https://api.pinata.cloud/pinning/pinFileToIPFS",
-  //       pinataFormData,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${import.meta.env.VITE_JWT}`,
-  //         },
-  //       }
-  //     );
-  //     console.log("File uploaded:", upload.data.IpfsHash);
-
-  //     // Step 2: Insert the CID into the "File Access Table" after a successful upload
-  //     const cid = upload.data.IpfsHash;
-  //     const { error: insertError } = await supabase
-  //       .from("File Access Table")
-  //       .insert([{ id: 1, CID: cid }]); // Insert the CID with a fixed id of 1
-
-  //     if (insertError) {
-  //       console.error("Error inserting data into Supabase:", insertError);
-  //       toast.error("Failed to insert data into Supabase.");
-  //     } else {
-  //       toast.success("Product added successfully!");
-  //     }
-
-  //     //Step 3 : Add the encryption key and IV to the "CID and ENCRYPTION KEY" table
-  //     const { error: insertError2 } = await supabase
-  //       .from("CID and ENCRYPTION KEY")
-  //       .insert([{ cid: cid, Encryption_Key: key, IV: iv }]); // Insert the CID with a fixed id of 1
-
-  //     if (insertError2) {
-  //       console.error("Error inserting data into Supabase:", insertError2);
-  //       toast.error("Failed to insert data into Supabase.");
-  //     }
-
-  //     // Reset form
-  //     setProductName("");
-  //     setFile(null);
-  //     fetchFiles();
-  //   } catch (error) {
-  //     console.error("File upload failed:", error);
-  //     toast.error("File upload failed.");
-  //   } finally {
-  //     setUploading(false);
-  //   }
-  // };
-
+  const userId = 1;
   const fetchFiles = async () => {
     setLoadingFiles(true);
-    try {
-      const response = await axios.get(
-        "https://api.pinata.cloud/data/pinList?status=pinned",
-        {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_JWT}`,
-          },
-        }
-      );
-      setFiles(response.data.rows);
-      console.log("Files fetched:", response.data.rows);
-    } catch (error) {
-      console.error("Error fetching files:", error);
-    } finally {
-      setLoadingFiles(false);
-    }
   };
 
   useEffect(() => {
-    setImageURL(localStorage.getItem("avatar_url") || "");
-    setName(localStorage.getItem("Name") || "");
-    console.log("Name:", name);
+    const fetchFiles = async () => {
+      setLoadingFiles(true);
+      try {
+        // Call the backend API to fetch files for the given user ID
+        const response = await axios.get(
+          `http://localhost:3000/files/${userId}`
+        );
+        setFiles(response.data.files); // Assuming backend returns { files: [...] }
+        console.log("Files fetched:", response.data.files);
+      } catch (error) {
+        console.error("Error fetching files:", error);
+      } finally {
+        setLoadingFiles(false);
+      }
+    };
+
     fetchFiles();
-  }, []);
+  }, [userId]);
 
   const handleViewFile = async (ipfsHash: string) => {
     try {
-
       // Step 2: Fetch key and IV from Supabase using the CID
       // console.log(fileName, ipfsHash);
       // const { data: encryptionData, error } = await supabase
@@ -266,7 +171,6 @@ export default function Dashboard() {
       // formData.append("iv", iv); // Use the fetched IV from Supabase
 
       // Step 5: Send the encrypted file to the backend for decryption
-
 
       // Send to backend, ipfsHash and id
       const formData = new FormData();
@@ -446,6 +350,7 @@ export default function Dashboard() {
               <h3 className="text-2xl font-bold tracking-tight">
                 List of your recent uploads
               </h3>
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -459,26 +364,19 @@ export default function Dashboard() {
                 <TableBody>
                   {loadingFiles ? (
                     <TableRow>
-                      <TableCell colSpan={3}>Loading...</TableCell>
+                      <TableCell colSpan={5}>Loading...</TableCell>
                     </TableRow>
                   ) : (
                     files.map((file) => (
-                      <TableRow key={file.ipfs_pin_hash}>
-                        <TableCell>{file.metadata.name}</TableCell>
-                        <TableCell>{file.size} bytes</TableCell>
-                        <TableCell>{file.date_pinned}</TableCell>
-
+                      <TableRow key={file.CID}>
+                        <TableCell>{file.fileName}</TableCell>
+                        <TableCell>{file.fileSize} bytes</TableCell>
                         <TableCell>
-                          {file.ipfs_pin_hash.slice(0, 10)}...
+                          {new Date(file.Date_of_upload).toLocaleDateString()}
                         </TableCell>
+                        <TableCell>{file.CID.slice(0, 10)}...</TableCell>
                         <TableCell>
-                          <Button
-                            onClick={() =>
-                              handleViewFile(
-                                file.ipfs_pin_hash
-                              )
-                            }
-                          >
+                          <Button onClick={() => handleViewFile(file.CID)}>
                             View File
                           </Button>
                         </TableCell>

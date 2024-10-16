@@ -248,6 +248,29 @@ app.get("/hello", (req: Request, res: Response) => {
   res.send("Hello from the server");
 });
 
+
+//Fetch Files Route 
+app.get('/files/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Fetch files from Supabase based on the user_id
+    const { data, error } = await supabase
+      .from('File Access Table')  
+      .select('id, CID, fileName, fileSize, Date_of_upload')
+      .eq('id', userId); // Filter by user ID
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json({ files: data });
+  } catch (error) {
+    console.error('Error fetching files:', error);
+    res.status(500).json({ error: 'Failed to fetch files' });
+  }
+});
+
 // Start the server
 app.listen(3000, () => {
   console.log("Server running on port 3000");
