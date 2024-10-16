@@ -51,7 +51,7 @@ export default function Dashboard() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [imageURL, setImageURL] = useState("");
-  const [name, setName] = useState("");
+  
   const [files, setFiles] = useState<FileData[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -136,7 +136,7 @@ export default function Dashboard() {
         setLoadingFiles(false);
       }
     };
-
+    setImageURL(localStorage.getItem("avatar_url") || "");
     fetchFiles();
   }, [userId]);
 
