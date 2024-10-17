@@ -5,8 +5,9 @@ export interface cidAndEncryptionKey {
 }
 
 export interface FileData {
-  CID:string;
-  fileName:string;
-  fileSize:string;
-  Date_of_upload:string;
-  }
+  CID: string;
+  fileName: string;
+  fileSize: string;
+  dateOfUpload: string;
+  fileType: string;
+}

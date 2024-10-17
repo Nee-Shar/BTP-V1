@@ -102,14 +102,14 @@ export default function Dashboard() {
     try {
       //Prepare data to send to backend, File, UserId,FileName
       const formData = new FormData();
-
+      const uid = localStorage.getItem("user_id");
       formData.append("image", file); // send file to the backend
-      formData.append("id", "1"); // send id of the user who uploaded the file
+      formData.append("id", uid || "1"); // send id of the user who uploaded the file
       formData.append("productName", productName);
 
       try {
         const response = await axios.post(
-          "http://localhost:3000/encrypt",
+          "http://localhost:3000/encryptImage",
           formData
         );
 
@@ -145,8 +145,9 @@ export default function Dashboard() {
 
     try {
       const formData = new FormData();
+      const uid = localStorage.getItem("user_id");
       formData.append("textFile", textFile); // send file to the backend
-      formData.append("id", "1"); // send id of the user who uploaded the file
+      formData.append("id", uid || "1"); // send id of the user who uploaded the file
       formData.append("fileName", textFileName);
 
       const response = await axios.post(
@@ -169,7 +170,7 @@ export default function Dashboard() {
     }
   };
 
-  const userId = 1;
+  const userId = localStorage.getItem("user_id");
   const fetchFiles = async () => {
     setLoadingFiles(true);
   };
@@ -177,11 +178,10 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchFiles = async () => {
       setLoadingFiles(true);
+      const uid = localStorage.getItem("user_id");
       try {
         // Call the backend API to fetch files for the given user ID
-        const response = await axios.get(
-          `http://localhost:3000/files/${userId}`
-        );
+        const response = await axios.get(`http://localhost:3000/files/${uid}`);
         setFiles(response.data.files); // Assuming backend returns { files: [...] }
         console.log("Files fetched:", response.data.files);
       } catch (error) {
@@ -194,72 +194,70 @@ export default function Dashboard() {
     fetchFiles();
   }, [userId]);
 
-  const handleViewFile = async (ipfsHash: string) => {
+  const handleViewFile = async (ipfsHash: string, fileType: string) => {
     try {
-      // Step 2: Fetch key and IV from Supabase using the CID
-      // console.log(fileName, ipfsHash);
-      // const { data: encryptionData, error } = await supabase
-      //   .from("CID and ENCRYPTION KEY")
-      //   .select("Encryption_Key, IV")
-      //   .eq("cid", ipfsHash)
-      //   .single();
-      // // separate error handling for error while retrieval or access not available
-      // if (error || !encryptionData) {
-      //   console.error("Error fetching key and IV:", error);
-      //   toast.error("Error fetching key and IV");
-      //   return;
-      // }
-
-      // const { Encryption_Key: key, IV: iv } = encryptionData;
-
-      // // Step 3: Fetch the encrypted file from IPFS as plain text
-      // const fileResponse = await axios.get(
-      //   `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
-      //   { responseType: "text" } // Fetch as plain text
-      // );
-
-      // // Step 4: Prepare form data for decryption
-      // const formData = new FormData();
-      // formData.append("encryptedFile", fileResponse.data);
-      // formData.append("key", key); // Use the fetched key from Supabase
-      // formData.append("iv", iv); // Use the fetched IV from Supabase
-
-      // Step 5: Send the encrypted file to the backend for decryption
-
       // Send to backend, ipfsHash and id
       const formData = new FormData();
-
+      const uid = localStorage.getItem("user_id");
       formData.append("cid", ipfsHash); // send file to the backend
-      formData.append("id", "1"); // send id of the user who uploaded the file
+      formData.append("id", uid || "1"); // send id of the user who uploaded the file
 
-      const decryptResponse = await axios.post(
-        "http://localhost:3000/decrypt",
-        formData,
-        { responseType: "blob" } // Expect binary (Blob) data back
-      );
+      // Determine which endpoint to call based on the file type
+      let endpoint = "";
+      let responseType = "blob"; // Expect binary data for image files
 
-      // Step 6: Create a URL for the decrypted Blob (image)
-      const decryptedBlob = new Blob([decryptResponse.data], {
-        type: "image/jpeg",
-      });
-      const url = URL.createObjectURL(decryptedBlob);
-
-      // Step 7: Create an <img> element to display the image
-      const img = document.createElement("img");
-      img.src = url;
-      img.style.width = "80%"; // Adjust image width
-      img.style.height = "auto"; // Maintain aspect ratio
-      img.style.display = "block"; // Remove inline space and ensure block-level element
-      img.style.margin = "20px auto"; // Center the image and add some space around it
-      img.style.borderRadius = "8px"; // Optional: Make corners rounded
-      img.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)"; // Optional: Add a subtle shadow for better visuals
-
-      // Step 8: Open a new window and write the image into it
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.body.appendChild(img);
+      if (fileType === "image") {
+        endpoint = "http://localhost:3000/decryptImage";
+      } else if (fileType === "text") {
+        endpoint = "http://localhost:3000/decryptText";
+        responseType = "text"; // For text files, expect plain text as the response
       } else {
-        alert("Failed to open new window.");
+        throw new Error("Unsupported file type.");
+      }
+
+      const decryptResponse = await axios.post(endpoint, formData, {
+        responseType: responseType as "blob" | "text",
+      });
+
+      // Handle image file
+      if (fileType === "image") {
+        const decryptedBlob = new Blob([decryptResponse.data], {
+          type: "image/jpeg",
+        });
+        const url = URL.createObjectURL(decryptedBlob);
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.width = "80%";
+        img.style.height = "auto";
+        img.style.display = "block";
+        img.style.margin = "20px auto";
+        img.style.borderRadius = "8px";
+        img.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.2)";
+
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.body.appendChild(img);
+        } else {
+          alert("Failed to open new window.");
+        }
+      }
+
+      // Handle text file
+      else if (fileType === "text") {
+        const decryptedText = decryptResponse.data; // Text response
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.body.innerHTML = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
+            <pre style="background-color: #f4f4f4; padding: 15px; border-radius: 8px; font-size: 16px; line-height: 1.6; color: #444; overflow-wrap: break-word; word-wrap: break-word; white-space: pre-wrap;">
+            ${decryptedText}
+            </pre>
+          </div>
+        `;
+        } else {
+          alert("Failed to open new window.");
+        }
       }
     } catch (error) {
       console.error("Error decrypting the file:", error);
@@ -396,6 +394,8 @@ export default function Dashboard() {
                     <TableHead>Size</TableHead>
                     <TableHead>Upload Date</TableHead>
                     <TableHead>CID</TableHead>
+
+                    <TableHead>File Type</TableHead>
                     <TableHead>Link</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -410,11 +410,18 @@ export default function Dashboard() {
                         <TableCell>{file.fileName}</TableCell>
                         <TableCell>{file.fileSize} bytes</TableCell>
                         <TableCell>
-                          {new Date(file.Date_of_upload).toLocaleDateString()}
+                          {new Date(file.dateOfUpload).toLocaleDateString()}
                         </TableCell>
+
                         <TableCell>{file.CID.slice(0, 10)}...</TableCell>
+
+                        <TableCell>{file.fileType}</TableCell>
                         <TableCell>
-                          <Button onClick={() => handleViewFile(file.CID)}>
+                          <Button
+                            onClick={() =>
+                              handleViewFile(file.CID, file.fileType)
+                            }
+                          >
                             View File
                           </Button>
                         </TableCell>
@@ -427,7 +434,7 @@ export default function Dashboard() {
               {/* For Image  */}
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button className="mt-4">Add a new file</Button>
+                  <Button className="mt-4">Add a new image file</Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>

@@ -24,6 +24,4 @@
 
 ## TO DO's
 
-1. Make fetchfiles in backend fetching acc to user id (currently fetching all files from frontend)
-2. Make differnt users in db.
-3. Make encry/decry of .txt files (using AES).
+1. User Access And Req Access To be created
