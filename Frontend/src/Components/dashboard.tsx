@@ -9,6 +9,7 @@ import {
   Key,
   Users,
 } from "lucide-react";
+
 import axios from "axios";
 import { useState, useEffect, useRef } from "react";
 
@@ -22,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,8 +32,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+
 import { Input } from "./ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+
 import {
   Dialog,
   DialogContent,
@@ -47,14 +51,21 @@ import { FileData } from "../types";
 import { supabase } from "../supabaseclient";
 
 export default function Dashboard() {
+  // Declaring state variables
   const [productName, setProductName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [imageURL, setImageURL] = useState("");
-  
+
   const [files, setFiles] = useState<FileData[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // New state for text file handling
+  const [textFile, setTextFile] = useState<File | null>(null);
+  const [textFileName, setTextFileName] = useState("");
+  const [uploadingText, setUploadingText] = useState(false);
+  const textFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -65,11 +76,18 @@ export default function Dashboard() {
     window.location.href = "/login";
   };
 
+  // fetches file uploaded and sets the state file as the uploaded
   const handleFileChange = (e: any) => {
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
   };
 
+  const handleTextFileChange = (e: any) => {
+    const selectedFile = e.target.files[0];
+    setTextFile(selectedFile);
+  };
+
+  // handles how the file is uploaded to ipfs
   const handleAddFile = async (e: any) => {
     e.preventDefault();
     setUploading(true);
@@ -110,6 +128,42 @@ export default function Dashboard() {
       setFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = ""; // Clear the file input field
+      }
+      fetchFiles();
+    }
+  };
+
+  const handleAddTextFile = async (e: any) => {
+    e.preventDefault();
+    setUploadingText(true);
+
+    if (!textFile) {
+      alert("Please select a text file to upload.");
+      setUploadingText(false);
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("textFile", textFile); // send file to the backend
+      formData.append("id", "1"); // send id of the user who uploaded the file
+      formData.append("fileName", textFileName);
+
+      const response = await axios.post(
+        "http://localhost:3000/encryptText",
+        formData
+      );
+
+      toast.success("Text File Uploaded!");
+    } catch (err) {
+      console.error("Error occurred while uploading text file", err);
+      toast.error("Text file upload failed.");
+    } finally {
+      setUploadingText(false);
+      setTextFileName("");
+      setTextFile(null);
+      if (textFileInputRef.current) {
+        textFileInputRef.current.value = "";
       }
       fetchFiles();
     }
@@ -260,22 +314,6 @@ export default function Dashboard() {
               </a>
             </nav>
           </div>
-          <div className="mt-auto p-4">
-            {/* <Card>
-              <CardHeader className="p-2 pt-0 md:p-4">
-                <CardTitle>Upgrade to Pro</CardTitle>
-                <CardDescription>
-                  Unlock all features and get unlimited access to our support
-                  team.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-                <Button size="sm" className="w-full">
-                  Upgrade
-                </Button>
-              </CardContent>
-            </Card> */}
-          </div>
         </div>
       </div>
       <div className="flex flex-col">
@@ -386,6 +424,7 @@ export default function Dashboard() {
                 </TableBody>
               </Table>
 
+              {/* For Image  */}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button className="mt-4">Add a new file</Button>
@@ -417,6 +456,43 @@ export default function Dashboard() {
                     <DialogFooter>
                       <Button type="submit" disabled={uploading}>
                         {uploading ? "Uploading..." : "Add Product"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
+              {/* New Dialog for adding a new text file */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="mt-4">Add a new text file</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Add a new text file</DialogTitle>
+                    <DialogDescription>
+                      Fill out the form and upload a .txt file.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleAddTextFile} className="grid gap-4 py-4">
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        placeholder="Text File Name"
+                        value={textFileName}
+                        onChange={(e) => setTextFileName(e.target.value)}
+                        required
+                      />
+                      <Input
+                        ref={textFileInputRef}
+                        type="file"
+                        accept=".txt"
+                        onChange={handleTextFileChange}
+                        required
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit" disabled={uploadingText}>
+                        {uploadingText ? "Uploading..." : "Add Text File"}
                       </Button>
                     </DialogFooter>
                   </form>
