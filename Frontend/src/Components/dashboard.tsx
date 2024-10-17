@@ -153,7 +153,7 @@ export default function Dashboard() {
         "http://localhost:3000/encryptText",
         formData
       );
-
+      console.log(response);
       toast.success("Text File Uploaded!");
     } catch (err) {
       console.error("Error occurred while uploading text file", err);
@@ -474,7 +474,10 @@ export default function Dashboard() {
                       Fill out the form and upload a .txt file.
                     </DialogDescription>
                   </DialogHeader>
-                  <form onSubmit={handleAddTextFile} className="grid gap-4 py-4">
+                  <form
+                    onSubmit={handleAddTextFile}
+                    className="grid gap-4 py-4"
+                  >
                     <div className="flex flex-col gap-2">
                       <Input
                         placeholder="Text File Name"
