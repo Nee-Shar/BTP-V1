@@ -109,7 +109,7 @@ export default function Dashboard() {
 
       try {
         const response = await axios.post(
-          "http://localhost:3000/encryptImage",
+          "http://localhost:3000/api/encrypt/encryptImage",
           formData
         );
 
@@ -151,7 +151,7 @@ export default function Dashboard() {
       formData.append("fileName", textFileName);
 
       const response = await axios.post(
-        "http://localhost:3000/encryptText",
+        "http://localhost:3000/api/encrypt/encryptText",
         formData
       );
       console.log(response);
@@ -181,7 +181,9 @@ export default function Dashboard() {
       const uid = localStorage.getItem("user_id");
       try {
         // Call the backend API to fetch files for the given user ID
-        const response = await axios.get(`http://localhost:3000/files/${uid}`);
+        const response = await axios.get(
+          `http://localhost:3000/api/fetch/files/${uid}`
+        );
         setFiles(response.data.files); // Assuming backend returns { files: [...] }
         console.log("Files fetched:", response.data.files);
       } catch (error) {
@@ -207,9 +209,9 @@ export default function Dashboard() {
       let responseType = "blob"; // Expect binary data for image files
 
       if (fileType === "image") {
-        endpoint = "http://localhost:3000/decryptImage";
+        endpoint = "http://localhost:3000/api/decrypt/decryptImage";
       } else if (fileType === "text") {
-        endpoint = "http://localhost:3000/decryptText";
+        endpoint = "http://localhost:3000/api/decrypt/decryptText";
         responseType = "text"; // For text files, expect plain text as the response
       } else {
         throw new Error("Unsupported file type.");
