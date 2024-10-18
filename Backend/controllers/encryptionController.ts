@@ -105,7 +105,7 @@ export const encryptImage = async (req: Request, res: Response) => {
 
         //Step 5 : Add the encryption key and IV to the "CID and ENCRYPTION KEY" table
         const { error: insertError2 } = await supabase
-          .from("CID and ENCRYPTION KEY")
+          .from("CID_AND_ENCRYPTION_KEY")
           .insert([{ cid: cid, Encryption_Key: Encryption_Key, IV: IV }]); // Insert the CID with a fixed id of 1
 
         if (insertError2) {
@@ -207,7 +207,7 @@ export const encryptText = async (req: Request, res: Response) => {
           ]);
 
         await supabase
-          .from("CID and ENCRYPTION KEY")
+          .from("CID_AND_ENCRYPTION_KEY")
           .insert([{ cid, Encryption_Key, IV }]);
 
         res.status(200).json({

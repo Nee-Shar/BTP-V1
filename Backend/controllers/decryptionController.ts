@@ -29,7 +29,7 @@ export const decryptImage = async (req: Request, res: Response) => {
     try {
       // Reaching here ensures the user has access to the file, now fetch the decryption key and iv for the given cid from Encrypted file info table
       const { data: encryptionData, error } = await supabase
-        .from("CID and ENCRYPTION KEY")
+        .from("CID_AND_ENCRYPTION_KEY")
         .select("Encryption_Key, IV")
         .eq("cid", cid)
         .single();
@@ -88,66 +88,65 @@ export const decryptImage = async (req: Request, res: Response) => {
 };
 
 export const decryptText = async (req: Request, res: Response) => {
-    const { cid, id } = req.body;
-    try {
-            // Reaching here ensures the user has access to the file, now fetch the decryption key and iv for the given cid from Encrypted file info table
-            const { data: encryptionData, error } = await supabase
-            .from("CID and ENCRYPTION KEY")
-            .select("Encryption_Key, IV")
-            .eq("cid", cid)
-            .single();
-          // separate error handling for error while retrieval or access not available
-          if (error || !encryptionData) {
-            throw error;
-          }
-    
-          const { Encryption_Key: key, IV: iv } = encryptionData;
-    
-      // Fetch the encrypted file from IPFS (Pinata)
-      const fileResponse = await axios.get(
-        `https://gateway.pinata.cloud/ipfs/${cid}`,
-        { responseType: "arraybuffer" } // Ensure binary data is received
-      );
-  
-      // Convert the response to a buffer
-      const encryptedBuffer = Buffer.from(fileResponse.data);
-  
-      // Log sizes for debugging
-      //console.log("Encrypted Buffer Length:", encryptedBuffer.length);
-  
-      // Decrypt the file
-      const decipher = crypto.createDecipheriv(
-        "aes-256-gcm",
-        Buffer.from(key, "hex"), // Key from hex
-        Buffer.from(iv, "base64") // IV from base64
-      );
-  
-      // Extract the last 16 bytes as the authentication tag
-      const authTag = encryptedBuffer.slice(-16);
-      decipher.setAuthTag(authTag);
-  
-      // Extract the actual encrypted data (excluding the auth tag)
-      const encryptedData = encryptedBuffer.slice(0, -16);
-  
-      // Log data lengths for debugging
-    //  console.log("Auth Tag Length:", authTag.length);
-      //console.log("Encrypted Data Length:", encryptedData.length);
-  
-      // Decrypt the data
-      const decrypted = Buffer.concat([
-        decipher.update(encryptedData),
-        decipher.final(),
-      ]);
-      //console.log("Decrypted:", decrypted.toString("utf-8"));
-      // Send the decrypted text as response
-      res.status(200).send(decrypted.toString("utf-8"));
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Error decrypting file:", error.message);
-      } else {
-        console.error("Error decrypting file:", error);
-      }
-      res.status(500).send("Error decrypting file.");
+  const { cid, id } = req.body;
+  try {
+    // Reaching here ensures the user has access to the file, now fetch the decryption key and iv for the given cid from Encrypted file info table
+    const { data: encryptionData, error } = await supabase
+      .from("CID_AND_ENCRYPTION_KEY")
+      .select("Encryption_Key, IV")
+      .eq("cid", cid)
+      .single();
+    // separate error handling for error while retrieval or access not available
+    if (error || !encryptionData) {
+      throw error;
     }
-  
+
+    const { Encryption_Key: key, IV: iv } = encryptionData;
+
+    // Fetch the encrypted file from IPFS (Pinata)
+    const fileResponse = await axios.get(
+      `https://gateway.pinata.cloud/ipfs/${cid}`,
+      { responseType: "arraybuffer" } // Ensure binary data is received
+    );
+
+    // Convert the response to a buffer
+    const encryptedBuffer = Buffer.from(fileResponse.data);
+
+    // Log sizes for debugging
+    //console.log("Encrypted Buffer Length:", encryptedBuffer.length);
+
+    // Decrypt the file
+    const decipher = crypto.createDecipheriv(
+      "aes-256-gcm",
+      Buffer.from(key, "hex"), // Key from hex
+      Buffer.from(iv, "base64") // IV from base64
+    );
+
+    // Extract the last 16 bytes as the authentication tag
+    const authTag = encryptedBuffer.slice(-16);
+    decipher.setAuthTag(authTag);
+
+    // Extract the actual encrypted data (excluding the auth tag)
+    const encryptedData = encryptedBuffer.slice(0, -16);
+
+    // Log data lengths for debugging
+    //  console.log("Auth Tag Length:", authTag.length);
+    //console.log("Encrypted Data Length:", encryptedData.length);
+
+    // Decrypt the data
+    const decrypted = Buffer.concat([
+      decipher.update(encryptedData),
+      decipher.final(),
+    ]);
+    //console.log("Decrypted:", decrypted.toString("utf-8"));
+    // Send the decrypted text as response
+    res.status(200).send(decrypted.toString("utf-8"));
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Error decrypting file:", error.message);
+    } else {
+      console.error("Error decrypting file:", error);
+    }
+    res.status(500).send("Error decrypting file.");
+  }
 };
