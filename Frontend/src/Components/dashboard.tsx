@@ -7,7 +7,8 @@ import {
   Search,
   ShoppingCart,
   Key,
-  Users,
+  FileInput,
+  Paperclip,
 } from "lucide-react";
 
 import axios from "axios";
@@ -15,6 +16,7 @@ import { useState, useEffect, useRef } from "react";
 
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Badge } from "./ui/badge";
 import {
   Table,
   TableBody,
@@ -47,17 +49,22 @@ import {
 } from "./ui/dialog";
 import toast, { Toaster } from "react-hot-toast";
 
-import { FileData } from "../types";
+import { FileData, reqFileData, recievedReqFileData } from "../types";
 import { supabase } from "../supabaseclient";
 
 export default function Dashboard() {
   // Declaring state variables
   const [productName, setProductName] = useState("");
+  const [requestedFileName, setRequestedFileName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [imageURL, setImageURL] = useState("");
 
   const [files, setFiles] = useState<FileData[]>([]);
+  const [reqFiles, setReqFiles] = useState<reqFileData[]>([]);
+  const [recievedReqFiles, setRecievedReqFiles] = useState<
+    recievedReqFileData[]
+  >([]);
   const [loadingFiles, setLoadingFiles] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -66,7 +73,11 @@ export default function Dashboard() {
   const [textFileName, setTextFileName] = useState("");
   const [uploadingText, setUploadingText] = useState(false);
   const textFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedTab, setSelectedTab] = useState("Dashboard");
 
+  const handleTabClick = (tab: string): void => {
+    setSelectedTab(tab);
+  };
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem("user_id");
@@ -133,6 +144,37 @@ export default function Dashboard() {
     }
   };
 
+  const handleRequestFile = async (e: any) => {
+    e.preventDefault();
+    setUploading(true);
+    try {
+      console.log("Requested File Name:", requestedFileName);
+      console.log("User ID:", userId);
+
+      const response = await axios.post(
+        `http://localhost:3000/api/fetch/requestFile`, // API endpoint
+        {
+          cid: requestedFileName,
+          user_id: localStorage.getItem("user_id"),
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response) {
+        console.error("Error requesting file:", response);
+      }
+      toast.success("File Requested Successfully!");
+      setRequestedFileName("");
+    } catch (e) {
+      console.error("Error occured while requesting file", e);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleAddTextFile = async (e: any) => {
     e.preventDefault();
     setUploadingText(true);
@@ -192,8 +234,44 @@ export default function Dashboard() {
         setLoadingFiles(false);
       }
     };
+
+    const fetchReqFiles = async () => {
+      setLoadingFiles(true);
+      const uid = localStorage.getItem("user_id");
+      try {
+        // Call the backend API to fetch files for the given user ID
+        const response = await axios.get(
+          `http://localhost:3000/api/fetch/requestedFiles/${uid}`
+        );
+        setReqFiles(response.data.files); // Assuming backend returns { files: [...] }
+        console.log("Files fetched:", response.data.files);
+      } catch (error) {
+        console.error("Error fetching files:", error);
+      } finally {
+        setLoadingFiles(false);
+      }
+    };
+
+    const fetchRecivedReqFiles = async () => {
+      setLoadingFiles(true);
+      const uid = localStorage.getItem("user_id");
+      try {
+        // Call the backend API to fetch files for the given user ID
+        const response = await axios.get(
+          `http://localhost:3000/api/fetch/receivedRequestedFiles/${uid}`
+        );
+        setRecievedReqFiles(response.data.files); // Assuming backend returns { files: [...] }
+        console.log("Files fetched:", response.data.files);
+      } catch (error) {
+        console.error("Error fetching files:", error);
+      } finally {
+        setLoadingFiles(false);
+      }
+    };
     setImageURL(localStorage.getItem("avatar_url") || "");
     fetchFiles();
+    fetchReqFiles();
+    fetchRecivedReqFiles();
   }, [userId]);
 
   const handleViewFile = async (ipfsHash: string, fileType: string) => {
@@ -285,25 +363,40 @@ export default function Dashboard() {
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               <a
                 href="#"
-                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary"
+                onClick={() => handleTabClick("Dashboard")}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                  selectedTab === "Dashboard"
+                    ? "bg-muted text-primary"
+                    : "text-muted-foreground hover:text-primary"
+                }`}
               >
                 <Home className="h-4 w-4" />
                 Dashboard
               </a>
               <a
                 href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
+                onClick={() => handleTabClick("Requests")}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                  selectedTab === "Requests"
+                    ? "bg-muted text-primary"
+                    : "text-muted-foreground hover:text-primary"
+                }`}
               >
-                <ShoppingCart className="h-4 w-4" />
-                Orders
+                <Paperclip className="h-4 w-4" />
+                Sent Requests
               </a>
 
               <a
                 href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
+                onClick={() => handleTabClick("Approvals")}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                  selectedTab === "Approvals"
+                    ? "bg-muted text-primary"
+                    : "text-muted-foreground hover:text-primary"
+                }`}
               >
-                <Users className="h-4 w-4" />
-                Customers
+                <FileInput className="h-4 w-4" />
+                Received Requests
               </a>
               <a
                 href="#"
@@ -342,9 +435,8 @@ export default function Dashboard() {
                   className="flex items-center gap-4 rounded-xl bg-muted px-3 py-2"
                 >
                   <ShoppingCart className="h-5 w-5" />
-                  Orders
+                  Requests
                 </a>
-                {/* Add more navigation links here */}
               </nav>
             </SheetContent>
           </Sheet>
@@ -379,140 +471,284 @@ export default function Dashboard() {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4">
-          <div className="flex items-center">
-            <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
-          </div>
-          <div className="flex flex-1 items-center justify-center rounded-lg border border-solid shadow-md">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <h3 className="text-2xl font-bold tracking-tight">
-                List of your recent uploads
-              </h3>
-
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>File Name</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Upload Date</TableHead>
-                    <TableHead>CID</TableHead>
-
-                    <TableHead>File Type</TableHead>
-                    <TableHead>Link</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loadingFiles ? (
-                    <TableRow>
-                      <TableCell colSpan={5}>Loading...</TableCell>
-                    </TableRow>
-                  ) : (
-                    files.map((file) => (
-                      <TableRow key={file.CID}>
-                        <TableCell>{file.fileName}</TableCell>
-                        <TableCell>{file.fileSize} bytes</TableCell>
-                        <TableCell>
-                          {new Date(file.dateOfUpload).toLocaleDateString()}
-                        </TableCell>
-
-                        <TableCell>{file.CID.slice(0, 10)}...</TableCell>
-
-                        <TableCell>{file.fileType}</TableCell>
-                        <TableCell>
-                          <Button
-                            onClick={() =>
-                              handleViewFile(file.CID, file.fileType)
-                            }
-                          >
-                            View File
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-
-              {/* For Image  */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="mt-4">Add a new image file</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Add a new file</DialogTitle>
-                    <DialogDescription>
-                      Fill out the form and upload a file .
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleAddFile} className="grid gap-4 py-4">
-                    <div className="flex flex-col gap-2">
-                      <Input
-                        placeholder="File Name"
-                        value={productName}
-                        onChange={(e) => setProductName(e.target.value)}
-                        required
-                      />
-
-                      <Input
-                        type="file"
-                        onChange={handleFileChange}
-                        ref={fileInputRef}
-                        accept="image/*"
-                        required
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button type="submit" disabled={uploading}>
-                        {uploading ? "Uploading..." : "Add Product"}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-
-              {/* New Dialog for adding a new text file */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="mt-4">Add a new text file</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Add a new text file</DialogTitle>
-                    <DialogDescription>
-                      Fill out the form and upload a .txt file.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form
-                    onSubmit={handleAddTextFile}
-                    className="grid gap-4 py-4"
-                  >
-                    <div className="flex flex-col gap-2">
-                      <Input
-                        placeholder="Text File Name"
-                        value={textFileName}
-                        onChange={(e) => setTextFileName(e.target.value)}
-                        required
-                      />
-                      <Input
-                        ref={textFileInputRef}
-                        type="file"
-                        accept=".txt"
-                        onChange={handleTextFileChange}
-                        required
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button type="submit" disabled={uploadingText}>
-                        {uploadingText ? "Uploading..." : "Add Text File"}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
+        {selectedTab === "Dashboard" && (
+          <main className="flex flex-1 flex-col gap-4 p-4">
+            <div className="flex items-center">
+              <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
             </div>
-          </div>
-        </main>
+            <div className="flex flex-1 items-center justify-center rounded-lg border border-solid shadow-md">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <h3 className="text-2xl font-bold tracking-tight">
+                  List of your recent uploads
+                </h3>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>File Name</TableHead>
+                      <TableHead>Size</TableHead>
+                      <TableHead>Upload Date</TableHead>
+                      <TableHead>CID</TableHead>
+
+                      <TableHead>File Type</TableHead>
+                      <TableHead>Link</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loadingFiles ? (
+                      <TableRow>
+                        <TableCell colSpan={5}>Loading...</TableCell>
+                      </TableRow>
+                    ) : (
+                      files.map((file) => (
+                        <TableRow key={file.CID}>
+                          <TableCell className="font-medium">
+                            {file.fileName}
+                          </TableCell>
+                          <TableCell>{file.fileSize} bytes</TableCell>
+                          <TableCell>
+                            {new Date(file.dateOfUpload).toLocaleDateString()}
+                          </TableCell>
+
+                          <TableCell>{file.CID.slice(0, 10)}...</TableCell>
+
+                          <TableCell>
+                            <Badge variant="outline"> {file.fileType}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              onClick={() =>
+                                handleViewFile(file.CID, file.fileType)
+                              }
+                            >
+                              View File
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+
+                {/* For Image  */}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="mt-4">Add a new image file</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Add a new file</DialogTitle>
+                      <DialogDescription>
+                        Fill out the form and upload a file .
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddFile} className="grid gap-4 py-4">
+                      <div className="flex flex-col gap-2">
+                        <Input
+                          placeholder="File Name"
+                          value={productName}
+                          onChange={(e) => setProductName(e.target.value)}
+                          required
+                        />
+
+                        <Input
+                          type="file"
+                          onChange={handleFileChange}
+                          ref={fileInputRef}
+                          accept="image/*"
+                          required
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" disabled={uploading}>
+                          {uploading ? "Uploading..." : "Add Product"}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+
+                {/* New Dialog for adding a new text file */}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="mt-4">Add a new text file</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Add a new text file</DialogTitle>
+                      <DialogDescription>
+                        Fill out the form and upload a .txt file.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form
+                      onSubmit={handleAddTextFile}
+                      className="grid gap-4 py-4"
+                    >
+                      <div className="flex flex-col gap-2">
+                        <Input
+                          placeholder="Text File Name"
+                          value={textFileName}
+                          onChange={(e) => setTextFileName(e.target.value)}
+                          required
+                        />
+                        <Input
+                          ref={textFileInputRef}
+                          type="file"
+                          accept=".txt"
+                          onChange={handleTextFileChange}
+                          required
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" disabled={uploadingText}>
+                          {uploadingText ? "Uploading..." : "Add Text File"}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </main>
+        )}
+        {selectedTab === "Requests" && (
+          <main className="flex flex-1 flex-col gap-4 p-4">
+            <div className="flex items-center">
+              <h1 className="text-lg font-semibold md:text-2xl">
+                Sent Requests
+              </h1>
+            </div>
+            <div className="flex flex-1 items-center justify-center rounded-lg border border-solid shadow-md">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <h3 className="text-2xl font-bold tracking-tight">
+                  List of your requested files
+                </h3>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>File CID</TableHead>
+                      <TableHead>File Owner</TableHead>
+                      <TableHead>File Status</TableHead>
+                      {/* <TableHead>CID</TableHead>
+
+                      <TableHead>File Type</TableHead>
+                      <TableHead>Link</TableHead> */}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loadingFiles ? (
+                      <TableRow>
+                        <TableCell colSpan={5}>Loading...</TableCell>
+                      </TableRow>
+                    ) : (
+                      reqFiles.map((file) => (
+                        <TableRow key={file.id}>
+                          <TableCell className="font-medium">
+                            {file.cid}
+                          </TableCell>
+                          <TableCell>{file.owner_id} </TableCell>
+                          <TableCell>{file.status}</TableCell>
+
+                          <TableCell>
+                            {/* <Button
+                              onClick={() =>
+                                handleViewFile(file.CID, file.fileType)
+                              }
+                            >
+                              View File
+                            </Button> */}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+
+                {/* For Req  */}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="mt-4">Request a new file</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Req a new file</DialogTitle>
+                      <DialogDescription>
+                        Fill out the form to request a file .
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form
+                      onSubmit={handleRequestFile}
+                      className="grid gap-4 py-4"
+                    >
+                      <div className="flex flex-col gap-2">
+                        <Input
+                          placeholder="File CID"
+                          value={requestedFileName}
+                          onChange={(e) => setRequestedFileName(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" disabled={uploading}>
+                          {uploading ? "Uploading..." : "Request File"}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </main>
+        )}
+        {selectedTab === "Approvals" && (
+          <main className="flex flex-1 flex-col gap-4 p-4">
+            <div className="flex items-center">
+              <h1 className="text-lg font-semibold md:text-2xl">
+                Received Requests
+              </h1>
+            </div>
+            <div className="flex flex-1 items-center justify-center rounded-lg border border-solid shadow-md">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <h3 className="text-2xl font-bold tracking-tight">
+                  List of Your Received Requests
+                </h3>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>File CID</TableHead>
+                      <TableHead>Requested By</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loadingFiles ? (
+                      <TableRow>
+                        <TableCell colSpan={3}>Loading...</TableCell>
+                      </TableRow>
+                    ) : (
+                      recievedReqFiles.map((request) => (
+                        <TableRow key={request.id}>
+                          <TableCell className="font-medium">
+                            {request.cid}
+                          </TableCell>
+                          <TableCell>{request.requester_id}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button>Approve</Button>
+                              <Button>Reject</Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </main>
+        )}
       </div>
     </div>
   );

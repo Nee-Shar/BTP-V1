@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import encryptionRoutes from "../routes/encryptionRoutes";
 import decryptionRoutes from "../routes/decryptionRoutes";
-import fetchRoutes from "../routes/fetchUserUploadedFiles";
+import fetchRoutes from "../routes/fetchFiles";
 import testRoutes from "../routes/testingRoutes";
 
 const app = express();
@@ -14,6 +14,8 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(express.json());
 
 app.use("/api/encrypt", encryptionRoutes);
 app.use("/api/decrypt", decryptionRoutes);

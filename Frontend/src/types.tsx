@@ -11,3 +11,20 @@ export interface FileData {
   dateOfUpload: string;
   fileType: string;
 }
+
+export interface reqFileData{
+  id:string;
+  requested_at:string;
+  cid:string;
+  requester_id:string;
+  status:string;
+  owner_id:string;
+}
+
+
+export interface recievedReqFileData{
+  id:string;
+  cid:string;
+  requester_id:string;
+  status:string;
+}
