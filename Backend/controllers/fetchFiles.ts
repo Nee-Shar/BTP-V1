@@ -30,7 +30,7 @@ export const fetchRequestedFiles = async (req: Request, res: Response) => {
     // Fetch all files from Supabase based on the user_id
     const { data, error } = await supabase
       .from("File_Permission_Table")
-      .select("id,cid, owner_id, status")
+      .select("id,cid, owner_id, status,fileType")
       .eq("requester_id", userId); // Filter by user ID
 
     if (error) {
@@ -127,3 +127,42 @@ if (error) {
 return res.status(200).json({ message: "File access request sent successfully" });
 
 }
+
+
+export const approveOrRejectFileRequest = async (req: Request, res: Response) => {
+  // We require owner id, file cid, and requester id to approve or reject the file request
+  const { cid, owner_id, requester_id, status } = req.body;
+
+  try {
+      // Fetch the entry from the File_Permission_Table
+      const { data, error } = await supabase
+          .from("File_Permission_Table")
+          .select("id, cid, requester_id, status")
+          .eq("owner_id", owner_id)
+          .eq("cid", cid)
+          .eq("requester_id", requester_id)
+          .single();
+
+      if (error) {
+          return res.status(400).json({ error: "Error fetching file request", details: error.message });
+      }
+
+      if (!data) {
+          return res.status(404).json({ error: "File request not found" });
+      }
+
+      // Update the status of the file request to either 'approved' or 'rejected'
+      const { error: updateError } = await supabase
+          .from("File_Permission_Table")
+          .update({ status })
+          .eq("id", data.id);
+
+      if (updateError) {
+          return res.status(400).json({ error: "Error updating file request status", details: updateError.message });
+      }
+
+      return res.status(200).json({ message: `File request ${status}` });
+  } catch (err) {
+      return res.status(500).json({ error: "Server error", details: (err as Error).message });
+  }
+};

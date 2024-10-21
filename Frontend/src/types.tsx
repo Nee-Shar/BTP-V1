@@ -19,6 +19,7 @@ export interface reqFileData{
   requester_id:string;
   status:string;
   owner_id:string;
+  fileType:string;
 }
 
 

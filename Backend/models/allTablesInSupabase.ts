@@ -33,4 +33,5 @@ interface File_Permission_Table {
   requester_id: string;
   owner_id: string;
   status: string; // Waiting, accepted, rejected
+  fileType: string; // text or image
 }

@@ -60,6 +60,8 @@ export default function Dashboard() {
   const [uploading, setUploading] = useState(false);
   const [imageURL, setImageURL] = useState("");
 
+  const [isApprovedDisabled, setApprovedDisabled] = useState(false);
+  const [isRejectedDisabled, setRejectedDisabled] = useState(false);
   const [files, setFiles] = useState<FileData[]>([]);
   const [reqFiles, setReqFiles] = useState<reqFileData[]>([]);
   const [recievedReqFiles, setRecievedReqFiles] = useState<
@@ -213,75 +215,74 @@ export default function Dashboard() {
   };
 
   const userId = localStorage.getItem("user_id");
+
+  const fetchReqFiles = async () => {
+    setLoadingFiles(true);
+    const uid = localStorage.getItem("user_id");
+    try {
+      // Call the backend API to fetch files for the given user ID
+      const response = await axios.get(
+        `http://localhost:3000/api/fetch/requestedFiles/${uid}`
+      );
+      setReqFiles(response.data.files); // Assuming backend returns { files: [...] }
+      console.log("Files fetched:", response.data.files);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
   const fetchFiles = async () => {
     setLoadingFiles(true);
+    const uid = localStorage.getItem("user_id");
+    try {
+      // Call the backend API to fetch files for the given user ID
+      const response = await axios.get(
+        `http://localhost:3000/api/fetch/files/${uid}`
+      );
+      setFiles(response.data.files); // Assuming backend returns { files: [...] }
+      console.log("Files fetched:", response.data.files);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+    } finally {
+      setLoadingFiles(false);
+    }
   };
-
+  const fetchRecivedReqFiles = async () => {
+    setLoadingFiles(true);
+    const uid = localStorage.getItem("user_id");
+    try {
+      // Call the backend API to fetch files for the given user ID
+      const response = await axios.get(
+        `http://localhost:3000/api/fetch/receivedRequestedFiles/${uid}`
+      );
+      setRecievedReqFiles(response.data.files); // Assuming backend returns { files: [...] }
+      console.log("Files fetched:", response.data.files);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
   useEffect(() => {
-    const fetchFiles = async () => {
-      setLoadingFiles(true);
-      const uid = localStorage.getItem("user_id");
-      try {
-        // Call the backend API to fetch files for the given user ID
-        const response = await axios.get(
-          `http://localhost:3000/api/fetch/files/${uid}`
-        );
-        setFiles(response.data.files); // Assuming backend returns { files: [...] }
-        console.log("Files fetched:", response.data.files);
-      } catch (error) {
-        console.error("Error fetching files:", error);
-      } finally {
-        setLoadingFiles(false);
-      }
-    };
-
-    const fetchReqFiles = async () => {
-      setLoadingFiles(true);
-      const uid = localStorage.getItem("user_id");
-      try {
-        // Call the backend API to fetch files for the given user ID
-        const response = await axios.get(
-          `http://localhost:3000/api/fetch/requestedFiles/${uid}`
-        );
-        setReqFiles(response.data.files); // Assuming backend returns { files: [...] }
-        console.log("Files fetched:", response.data.files);
-      } catch (error) {
-        console.error("Error fetching files:", error);
-      } finally {
-        setLoadingFiles(false);
-      }
-    };
-
-    const fetchRecivedReqFiles = async () => {
-      setLoadingFiles(true);
-      const uid = localStorage.getItem("user_id");
-      try {
-        // Call the backend API to fetch files for the given user ID
-        const response = await axios.get(
-          `http://localhost:3000/api/fetch/receivedRequestedFiles/${uid}`
-        );
-        setRecievedReqFiles(response.data.files); // Assuming backend returns { files: [...] }
-        console.log("Files fetched:", response.data.files);
-      } catch (error) {
-        console.error("Error fetching files:", error);
-      } finally {
-        setLoadingFiles(false);
-      }
-    };
     setImageURL(localStorage.getItem("avatar_url") || "");
     fetchFiles();
     fetchReqFiles();
     fetchRecivedReqFiles();
-  }, [userId]);
+  }, [files.length, reqFiles.length, recievedReqFiles.length]);
 
-  const handleViewFile = async (ipfsHash: string, fileType: string) => {
+  const handleViewFile = async (
+    ipfsHash: string,
+    fileType: string,
+    owner_id: string
+  ) => {
     try {
       // Send to backend, ipfsHash and id
       const formData = new FormData();
-      const uid = localStorage.getItem("user_id");
+      const uid = owner_id;
       formData.append("cid", ipfsHash); // send file to the backend
       formData.append("id", uid || "1"); // send id of the user who uploaded the file
-
+      console.log(ipfsHash, fileType);
       // Determine which endpoint to call based on the file type
       let endpoint = "";
       let responseType = "blob"; // Expect binary data for image files
@@ -342,6 +343,50 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Error decrypting the file:", error);
       toast.error("Error decrypting the file");
+    }
+  };
+
+  const handleApproveFileRequest = async (
+    cid: string,
+    requester_id: string,
+    status: string
+  ) => {
+    //const { cid, owner_id, requester_id, status } = req.body;
+    try {
+      const owner_id = localStorage.getItem("user_id");
+
+      const response = await axios.post(
+        "http://localhost:3000/api/fetch/acceptOrRejectFileRequest",
+        {
+          cid: cid,
+          owner_id: owner_id,
+          requester_id: requester_id,
+          status: status,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success(`File request ${status} successfully!`);
+        fetchReqFiles();
+
+        fetchRecivedReqFiles();
+        if (status === "Approved") {
+          setApprovedDisabled(true); // Disable the approve button
+        } else if (status === "Rejected") {
+          setRejectedDisabled(true); // Disable the reject button
+        }
+      } else {
+        toast.error(`Failed to ${status} file request`);
+      }
+    } catch (error) {
+      console.error("Error updating file request status:", error);
+      const err = error as any;
+      toast.error(`Error updating file request status: ${err.message}`);
     }
   };
 
@@ -518,7 +563,11 @@ export default function Dashboard() {
                           <TableCell>
                             <Button
                               onClick={() =>
-                                handleViewFile(file.CID, file.fileType)
+                                handleViewFile(
+                                  file.CID,
+                                  file.fileType,
+                                  localStorage.getItem("user_id") || "1"
+                                )
                               }
                             >
                               View File
@@ -561,7 +610,7 @@ export default function Dashboard() {
                       </div>
                       <DialogFooter>
                         <Button type="submit" disabled={uploading}>
-                          {uploading ? "Uploading..." : "Add Product"}
+                          {uploading ? "Uploading..." : "Add Image"}
                         </Button>
                       </DialogFooter>
                     </form>
@@ -630,6 +679,7 @@ export default function Dashboard() {
                       <TableHead>File CID</TableHead>
                       <TableHead>File Owner</TableHead>
                       <TableHead>File Status</TableHead>
+                      <TableHead>File Type</TableHead>
                       {/* <TableHead>CID</TableHead>
 
                       <TableHead>File Type</TableHead>
@@ -649,15 +699,21 @@ export default function Dashboard() {
                           </TableCell>
                           <TableCell>{file.owner_id} </TableCell>
                           <TableCell>{file.status}</TableCell>
+                          <TableCell>{file.fileType}</TableCell>
 
                           <TableCell>
-                            {/* <Button
+                            <Button
+                              disabled={file.status === "Approved" ? false : true}
                               onClick={() =>
-                                handleViewFile(file.CID, file.fileType)
+                                handleViewFile(
+                                  file.cid,
+                                  file.fileType,
+                                  file.owner_id
+                                )
                               }
                             >
                               View File
-                            </Button> */}
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
@@ -719,6 +775,7 @@ export default function Dashboard() {
                     <TableRow>
                       <TableHead>File CID</TableHead>
                       <TableHead>Requested By</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -734,11 +791,64 @@ export default function Dashboard() {
                             {request.cid}
                           </TableCell>
                           <TableCell>{request.requester_id}</TableCell>
+                          <TableCell>{request.status}</TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
-                              <Button>Approve</Button>
-                              <Button>Reject</Button>
-                            </div>
+                            {request.status === "waiting" && (
+                              <div className="flex gap-2">
+                                <Button
+                                  disabled={isApprovedDisabled}
+                                  onClick={() =>
+                                    handleApproveFileRequest(
+                                      request.cid,
+                                      request.requester_id,
+                                      "Approved"
+                                    )
+                                  }
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  disabled={isRejectedDisabled}
+                                  onClick={() =>
+                                    handleApproveFileRequest(
+                                      request.cid,
+                                      request.requester_id,
+                                      "Rejected"
+                                    )
+                                  }
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            )}
+                            {request.status != "waiting" && (
+                              <div className="flex gap-2">
+                                <Button
+                                  disabled
+                                  onClick={() =>
+                                    handleApproveFileRequest(
+                                      request.cid,
+                                      request.requester_id,
+                                      "Approved"
+                                    )
+                                  }
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  disabled
+                                  onClick={() =>
+                                    handleApproveFileRequest(
+                                      request.cid,
+                                      request.requester_id,
+                                      "Rejected"
+                                    )
+                                  }
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))

@@ -18,6 +18,7 @@ export const decryptImage = async (req: Request, res: Response) => {
       .single(); // Use .single() to expect at most one record
 
     if (error) {
+      console.log("User doesn't has access to the requested file");
       throw error;
     }
 
@@ -90,6 +91,18 @@ export const decryptImage = async (req: Request, res: Response) => {
 export const decryptText = async (req: Request, res: Response) => {
   const { cid, id } = req.body;
   try {
+    const { data: accessData, error: accessError } = await supabase
+      .from("File_Acess_Table") // Replace with your table name
+      .select("id") // Selecting a column (can be any column)
+      .eq("CID", cid)
+      .eq("id", id)
+      .single(); // Expecting only one record
+
+    if (accessError || !accessData) {
+      console.log("User doesn't have access to the requested file");
+      return res.status(403).json({ error: "Access Denied" });
+    }
+
     // Reaching here ensures the user has access to the file, now fetch the decryption key and iv for the given cid from Encrypted file info table
     const { data: encryptionData, error } = await supabase
       .from("CID_AND_ENCRYPTION_KEY")
