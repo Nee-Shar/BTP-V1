@@ -6,6 +6,10 @@ import {
   Package2,
   Search,
   ShoppingCart,
+  FileText,
+  Image as ImageIcon,
+  Plus,
+  ExternalLink,
   Key,
   FileInput,
   Paperclip,
@@ -14,6 +18,13 @@ import {
 import axios from "axios";
 import { useState, useEffect, useRef } from "react";
 
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -150,9 +161,6 @@ export default function Dashboard() {
     e.preventDefault();
     setUploading(true);
     try {
-      console.log("Requested File Name:", requestedFileName);
-      console.log("User ID:", userId);
-
       const response = await axios.post(
         `http://localhost:3000/api/fetch/requestFile`, // API endpoint
         {
@@ -169,6 +177,9 @@ export default function Dashboard() {
         console.error("Error requesting file:", response);
       }
       toast.success("File Requested Successfully!");
+      fetchFiles();
+      fetchReqFiles();
+      fetchRecivedReqFiles();
       setRequestedFileName("");
     } catch (e) {
       console.error("Error occured while requesting file", e);
@@ -213,8 +224,6 @@ export default function Dashboard() {
       fetchFiles();
     }
   };
-
-  const userId = localStorage.getItem("user_id");
 
   const fetchReqFiles = async () => {
     setLoadingFiles(true);
@@ -516,79 +525,24 @@ export default function Dashboard() {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
+
         {selectedTab === "Dashboard" && (
-          <main className="flex flex-1 flex-col gap-4 p-4">
-            <div className="flex items-center">
-              <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
-            </div>
-            <div className="flex flex-1 items-center justify-center rounded-lg border border-solid shadow-md">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <h3 className="text-2xl font-bold tracking-tight">
-                  List of your recent uploads
-                </h3>
-
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>File Name</TableHead>
-                      <TableHead>Size</TableHead>
-                      <TableHead>Upload Date</TableHead>
-                      <TableHead>CID</TableHead>
-
-                      <TableHead>File Type</TableHead>
-                      <TableHead>Link</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingFiles ? (
-                      <TableRow>
-                        <TableCell colSpan={5}>Loading...</TableCell>
-                      </TableRow>
-                    ) : (
-                      files.map((file) => (
-                        <TableRow key={file.CID}>
-                          <TableCell className="font-medium">
-                            {file.fileName}
-                          </TableCell>
-                          <TableCell>{file.fileSize} bytes</TableCell>
-                          <TableCell>
-                            {new Date(file.dateOfUpload).toLocaleDateString()}
-                          </TableCell>
-
-                          <TableCell>{file.CID.slice(0, 10)}...</TableCell>
-
-                          <TableCell>
-                            <Badge variant="outline"> {file.fileType}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              onClick={() =>
-                                handleViewFile(
-                                  file.CID,
-                                  file.fileType,
-                                  localStorage.getItem("user_id") || "1"
-                                )
-                              }
-                            >
-                              View File
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-
-                {/* For Image  */}
+          <main className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button className="mt-4">Add a new image file</Button>
+                    <Button className="w-full sm:w-auto">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add image
+                    </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                      <DialogTitle>Add a new file</DialogTitle>
+                      <DialogTitle>Add a new image file</DialogTitle>
                       <DialogDescription>
-                        Fill out the form and upload a file .
+                        Fill out the form and upload an image file.
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleAddFile} className="grid gap-4 py-4">
@@ -599,7 +553,6 @@ export default function Dashboard() {
                           onChange={(e) => setProductName(e.target.value)}
                           required
                         />
-
                         <Input
                           type="file"
                           onChange={handleFileChange}
@@ -616,11 +569,12 @@ export default function Dashboard() {
                     </form>
                   </DialogContent>
                 </Dialog>
-
-                {/* New Dialog for adding a new text file */}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button className="mt-4">Add a new text file</Button>
+                    <Button variant="outline" className="w-full sm:w-auto">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add text file
+                    </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
@@ -658,204 +612,250 @@ export default function Dashboard() {
                 </Dialog>
               </div>
             </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {loadingFiles ? (
+                <Card>
+                  <CardContent className="flex items-center justify-center h-40">
+                    <p>Loading...</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                files.map((file) => (
+                  <Card key={file.CID} className="overflow-hidden">
+                    <div
+                      className="h-32 bg-cover bg-center"
+                      style={{
+                        backgroundImage:
+                          file.fileType === "image"
+                            ? `url('https://repository-images.githubusercontent.com/229240000/2b1bba00-eae1-11ea-8b31-ea57fe8a3f95')`
+                            : `url("https://www.hitechnectar.com/wp-content/uploads/2018/07/notepad-jpg-webp.webp")`,
+                      }}
+                    />
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        {file.fileType === "image" ? (
+                          <ImageIcon className="h-5 w-5" />
+                        ) : (
+                          <FileText className="h-5 w-5" />
+                        )}
+                        {file.fileName}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Size: {file.fileSize} bytes
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Uploaded:{" "}
+                        {new Date(file.dateOfUpload).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        CID: {file.CID.slice(0, 10)}...
+                      </p>
+                      <Badge variant="outline" className="mt-2">
+                        {file.fileType}
+                      </Badge>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        onClick={() =>
+                          handleViewFile(
+                            file.CID,
+                            file.fileType,
+                            localStorage.getItem("user_id") || "1"
+                          )
+                        }
+                        className="w-full"
+                      >
+                        View File
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))
+              )}
+            </div>
           </main>
         )}
         {selectedTab === "Requests" && (
-          <main className="flex flex-1 flex-col gap-4 p-4">
-            <div className="flex items-center">
-              <h1 className="text-lg font-semibold md:text-2xl">
+          <main className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <h1 className="text-3xl font-bold tracking-tight">
                 Sent Requests
               </h1>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Request a new file
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Request a new file</DialogTitle>
+                    <DialogDescription>
+                      Fill out the form to request a file.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form
+                    onSubmit={handleRequestFile}
+                    className="grid gap-4 py-4"
+                  >
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        placeholder="File CID"
+                        value={requestedFileName}
+                        onChange={(e) => setRequestedFileName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit" disabled={uploading}>
+                        {uploading ? "Requesting..." : "Request File"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
-            <div className="flex flex-1 items-center justify-center rounded-lg border border-solid shadow-md">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <h3 className="text-2xl font-bold tracking-tight">
-                  List of your requested files
-                </h3>
-
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>File CID</TableHead>
-                      <TableHead>File Owner</TableHead>
-                      <TableHead>File Status</TableHead>
-                      <TableHead>File Type</TableHead>
-                      {/* <TableHead>CID</TableHead>
-
-                      <TableHead>File Type</TableHead>
-                      <TableHead>Link</TableHead> */}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingFiles ? (
-                      <TableRow>
-                        <TableCell colSpan={5}>Loading...</TableCell>
-                      </TableRow>
-                    ) : (
-                      reqFiles.map((file) => (
-                        <TableRow key={file.id}>
-                          <TableCell className="font-medium">
-                            {file.cid}
-                          </TableCell>
-                          <TableCell>{file.owner_id} </TableCell>
-                          <TableCell>{file.status}</TableCell>
-                          <TableCell>{file.fileType}</TableCell>
-
-                          <TableCell>
-                            <Button
-                              disabled={file.status === "Approved" ? false : true}
-                              onClick={() =>
-                                handleViewFile(
-                                  file.cid,
-                                  file.fileType,
-                                  file.owner_id
-                                )
-                              }
-                            >
-                              View File
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-
-                {/* For Req  */}
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="mt-4">Request a new file</Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Req a new file</DialogTitle>
-                      <DialogDescription>
-                        Fill out the form to request a file .
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form
-                      onSubmit={handleRequestFile}
-                      className="grid gap-4 py-4"
-                    >
-                      <div className="flex flex-col gap-2">
-                        <Input
-                          placeholder="File CID"
-                          value={requestedFileName}
-                          onChange={(e) => setRequestedFileName(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <DialogFooter>
-                        <Button type="submit" disabled={uploading}>
-                          {uploading ? "Uploading..." : "Request File"}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {loadingFiles ? (
+                <Card>
+                  <CardContent className="flex items-center justify-center h-40">
+                    <p>Loading...</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                reqFiles.map((file) => (
+                  <Card key={file.id} className="overflow-hidden">
+                    <div
+                      className="h-32 bg-cover bg-center flex items-center justify-center"
+                      style={{
+                        backgroundImage:
+                          file.fileType === "image"
+                            ? `url('https://repository-images.githubusercontent.com/229240000/2b1bba00-eae1-11ea-8b31-ea57fe8a3f95')`
+                            : `url("https://www.hitechnectar.com/wp-content/uploads/2018/07/notepad-jpg-webp.webp")`,
+                      }}
+                    ></div>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        {file.fileType === "image" ? (
+                          <ImageIcon className="h-5 w-5" />
+                        ) : (
+                          <FileText className="h-5 w-5" />
+                        )}
+                        File: {file.cid.slice(0, 20)}...
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Owner ID: {file.owner_id}
+                      </p>
+                      <p className="text-sm font-bold">Status: {file.status}</p>
+                      <Badge variant="outline" className="mt-2">
+                        {file.fileType}
+                      </Badge>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        onClick={() =>
+                          handleViewFile(file.cid, file.fileType, file.owner_id)
+                        }
+                        className="w-full"
+                        disabled={file.status !== "Approved"}
+                      >
+                        View File
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))
+              )}
             </div>
           </main>
         )}
         {selectedTab === "Approvals" && (
-          <main className="flex flex-1 flex-col gap-4 p-4">
-            <div className="flex items-center">
-              <h1 className="text-lg font-semibold md:text-2xl">
+          <main className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <h1 className="text-3xl font-bold tracking-tight">
                 Received Requests
               </h1>
+              {/* You can add a dialog here for actions related to approvals if needed */}
             </div>
-            <div className="flex flex-1 items-center justify-center rounded-lg border border-solid shadow-md">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <h3 className="text-2xl font-bold tracking-tight">
-                  List of Your Received Requests
-                </h3>
-
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>File CID</TableHead>
-                      <TableHead>Requested By</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingFiles ? (
-                      <TableRow>
-                        <TableCell colSpan={3}>Loading...</TableCell>
-                      </TableRow>
-                    ) : (
-                      recievedReqFiles.map((request) => (
-                        <TableRow key={request.id}>
-                          <TableCell className="font-medium">
-                            {request.cid}
-                          </TableCell>
-                          <TableCell>{request.requester_id}</TableCell>
-                          <TableCell>{request.status}</TableCell>
-                          <TableCell>
-                            {request.status === "waiting" && (
-                              <div className="flex gap-2">
-                                <Button
-                                  disabled={isApprovedDisabled}
-                                  onClick={() =>
-                                    handleApproveFileRequest(
-                                      request.cid,
-                                      request.requester_id,
-                                      "Approved"
-                                    )
-                                  }
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  disabled={isRejectedDisabled}
-                                  onClick={() =>
-                                    handleApproveFileRequest(
-                                      request.cid,
-                                      request.requester_id,
-                                      "Rejected"
-                                    )
-                                  }
-                                >
-                                  Reject
-                                </Button>
-                              </div>
-                            )}
-                            {request.status != "waiting" && (
-                              <div className="flex gap-2">
-                                <Button
-                                  disabled
-                                  onClick={() =>
-                                    handleApproveFileRequest(
-                                      request.cid,
-                                      request.requester_id,
-                                      "Approved"
-                                    )
-                                  }
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  disabled
-                                  onClick={() =>
-                                    handleApproveFileRequest(
-                                      request.cid,
-                                      request.requester_id,
-                                      "Rejected"
-                                    )
-                                  }
-                                >
-                                  Reject
-                                </Button>
-                              </div>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {loadingFiles ? (
+                <Card>
+                  <CardContent className="flex items-center justify-center h-40">
+                    <p>Loading...</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                recievedReqFiles.map((request) => (
+                  <Card key={request.id} className="overflow-hidden">
+                    <div
+                      className="h-32 bg-cover bg-center flex items-center justify-center"
+                      style={{
+                        backgroundImage:
+                          request.fileType === "image"
+                            ? `url('https://repository-images.githubusercontent.com/229240000/2b1bba00-eae1-11ea-8b31-ea57fe8a3f95')`
+                            : `url('https://www.hitechnectar.com/wp-content/uploads/2018/07/notepad-jpg-webp.webp')`,
+                      }}
+                    ></div>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        File: {request.cid.slice(0, 20)}...
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Requested By: {request.requester_id}
+                      </p>
+                      <p className="text-sm font-bold">
+                        Status: {request.status}
+                      </p>
+                      <Badge variant="outline" className="mt-2">
+                        {request.fileType}
+                      </Badge>
+                    </CardContent>
+                    <CardFooter>
+                      <div className="flex gap-2">
+                        {request.status === "Waiting" ? (
+                          <>
+                            <Button
+                              onClick={() =>
+                                handleApproveFileRequest(
+                                  request.cid,
+                                  request.requester_id,
+                                  "Approved"
+                                )
+                              }
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                handleApproveFileRequest(
+                                  request.cid,
+                                  request.requester_id,
+                                  "Rejected"
+                                )
+                              }
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button disabled>Approve</Button>
+                            <Button disabled>Reject</Button>
+                          </>
+                        )}
+                      </div>
+                    </CardFooter>
+                  </Card>
+                ))
+              )}
             </div>
           </main>
         )}
