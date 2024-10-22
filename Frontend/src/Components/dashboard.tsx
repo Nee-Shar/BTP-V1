@@ -28,14 +28,6 @@ import {
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
 
 import {
   DropdownMenu,
@@ -385,8 +377,11 @@ export default function Dashboard() {
 
         fetchRecivedReqFiles();
         if (status === "Approved") {
+          console.log(isApprovedDisabled);
           setApprovedDisabled(true); // Disable the approve button
         } else if (status === "Rejected") {
+          console.log(isRejectedDisabled);
+
           setRejectedDisabled(true); // Disable the reject button
         }
       } else {
