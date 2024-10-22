@@ -62,17 +62,17 @@ jobs:
           to: ${{ secrets.CHAT_ID }}
           token: ${{ secrets.ACCESS_TOKEN }}
           message: |
-            Commit done in repo BTP-V1, do pull before committing anything new to avoid
-            git conflicts (unless you enjoy solving bugs 🪲).
+            Commit done in repo BTP-V1.
 
             Commit message: ${{ github.event.head_commit.message }}
+
             Committer: ${{ github.actor }}
+
             Commit URL: ${{ github.event.head_commit.url }}
 
-            Frontend Build Status: ${{ needs.build-frontend.result }}  # Frontend build status
-            Backend Build Status: ${{ needs.build-backend.result }}  # Backend build status
+            Frontend Build Status: ${{ needs.build-frontend.result }}  
 
-            PS: It's a read-only bot, so avoid sending any msgs; all of them will be ignored 🚮
+            Backend Build Status: ${{ needs.build-backend.result }}
 
       - name: Send custom message to User 2
         uses: appleboy/telegram-action@master
@@ -80,14 +80,14 @@ jobs:
           to: ${{ secrets.HARSH_CHAT_ID }}
           token: ${{ secrets.ACCESS_TOKEN }}
           message: |
-            Commit done in repo BTP-V1, do pull before committing anything new to avoid
-            git conflicts (unless you love solving bugs 🪲).
+            Commit done in repo BTP-V1.
 
             Commit message: ${{ github.event.head_commit.message }}
+
             Committer: ${{ github.actor }}
+
             Commit URL: ${{ github.event.head_commit.url }}
 
-            Frontend Build Status: ${{ needs.build-frontend.result }}  # Frontend build status
-            Backend Build Status: ${{ needs.build-backend.result }}  # Backend build status
+            Frontend Build Status: ${{ needs.build-frontend.result }} 
 
-            PS: It's a read-only bot, so avoid sending any msgs; all of them will be ignored 🚮
+            Backend Build Status: ${{ needs.build-backend.result }}
