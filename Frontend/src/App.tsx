@@ -5,7 +5,7 @@ import SecureFileSystemLogin from "../src/Components/login";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "./supabaseclient";
-
+//import Chart from "../src/Components/chart";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -25,7 +25,7 @@ function App() {
           "avatar_url",
           session.user.user_metadata.avatar_url
         );
-        localStorage.setItem("Name",session.user.user_metadata.full_name);
+        localStorage.setItem("Name", session.user.user_metadata.full_name);
         setIsAuthenticated(true); // Set authenticated status
       } else {
         localStorage.removeItem("user_id");

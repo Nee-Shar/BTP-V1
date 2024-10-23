@@ -14,10 +14,8 @@ import {
   FileInput,
   Paperclip,
 } from "lucide-react";
-
 import axios from "axios";
 import { useState, useEffect, useRef } from "react";
-
 import {
   Card,
   CardContent,
@@ -28,7 +26,6 @@ import {
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,10 +34,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-
 import { Input } from "./ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-
 import {
   Dialog,
   DialogContent,
