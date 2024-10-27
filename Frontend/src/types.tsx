@@ -29,3 +29,13 @@ export interface recievedReqFileData {
   status: string;
   fileType: string;
 }
+
+export interface publicFileData{
+  id:string; // PRIMARY KEY auto added uuid
+  created_at: Date; // auto added
+  CID:string;
+  fileName: string;
+  fileSize: number;
+  fileType: string; // text or image
+  owner : string;
+}

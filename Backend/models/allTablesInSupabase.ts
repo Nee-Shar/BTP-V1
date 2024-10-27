@@ -35,3 +35,13 @@ interface File_Permission_Table {
   status: string; // Waiting, accepted, rejected
   fileType: string; // text or image
 }
+
+interface Public_Files{
+  id:UUID; // PRIMARY KEY auto added uuid
+  created_at: Date; // auto added
+  CID:string;
+  fileName: string;
+  fileSize: number;
+  fileType: string; // text or image
+  owner : string;
+}
