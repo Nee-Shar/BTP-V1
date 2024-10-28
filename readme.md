@@ -24,5 +24,5 @@
 
 ## TO DO's
 
-1. Thinking of creating a public pool where public files are listed.
+1. DO CACHING SERVER SIDE AND CLIENT SIDE (REDIS AND ZUSTAND)
 2. Improve Frontend Code Readbility ( maybe separate the functions to other files)

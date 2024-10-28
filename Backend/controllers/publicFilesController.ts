@@ -35,7 +35,7 @@ export const uploadImageToPublic = async (req: Request, res: Response) => {
     const cid = uploadResponse.data.IpfsHash;
     const fileSize = uploadResponse.data.PinSize;
     const dateOfUpload = uploadResponse.data.Timestamp;
-    const dateOnly = dateOfUpload.split("T")[0]; // Extract 'YYYY-MM-DD'
+
     const fileType = "image";
 
     // Insert the upload details into Supabase File Access Table
@@ -64,6 +64,66 @@ export const uploadImageToPublic = async (req: Request, res: Response) => {
   }
 };
 
+export const uploadTextToPublic = async (req: Request, res: Response) => {
+  const id = req.body.id;
+  const textFileName = req.body.fileName;
+  console.log("textFileName: ", textFileName, id);
+
+  if (!req.file) {
+    return res.status(400).send("No text file uploaded.");
+  }
+
+  try {
+    // Upload the file to IPFS (Pinata)
+    const pinataFormData = new FormData();
+
+    pinataFormData.append("file", req.file.buffer, textFileName); // Specify the filename directly
+    pinataFormData.append(
+      "pinataMetadata",
+      JSON.stringify({ name: textFileName })
+    );
+    pinataFormData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
+    try {
+      // Upload to Pinata
+      const upload = await axios.post(
+        "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        pinataFormData,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.VITE_JWT}`,
+          },
+        }
+      );
+
+      const cid = upload.data.IpfsHash;
+      const fileSize = upload.data.PinSize;
+      const fileType = "text";
+
+      // Insert CID and file details into Supabase
+      await supabase.from("Public_Files").insert([
+        {
+          owner: id,
+          CID: cid,
+          fileName: textFileName,
+          fileSize: fileSize,
+          fileType: fileType,
+        },
+      ]);
+
+      res.status(200).json({
+        message: "File uploaded successfully!",
+        CID: cid,
+      });
+    } catch (pinataError) {
+      console.error("Error uploading file to Pinata:", pinataError);
+      res.status(500).send("Error uploading file to IPFS.");
+    }
+  } catch (error) {
+    console.error("Error during file upload:", error);
+    res.status(500).json({ error: "File upload failed." });
+  }
+};
+
 export const fetchPublicFiles = async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase
@@ -85,7 +145,7 @@ export const viewImageFile = async (req: Request, res: Response) => {
   const { cid } = req.body;
 
   try {
-    console.log("CID: here ", cid);
+    // console.log("CID: here ", cid);
     // Fetch the image file from IPFS
     const fileResponse = await axios.get(
       `https://gateway.pinata.cloud/ipfs/${cid}`,
@@ -105,6 +165,7 @@ export const viewImageFile = async (req: Request, res: Response) => {
 
 export const viewTextFile = async (req: Request, res: Response) => {
   const { cid } = req.body;
+  //console.log("CID: ", cid);
 
   try {
     // Fetch the text file from IPFS

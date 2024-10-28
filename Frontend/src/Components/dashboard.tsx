@@ -94,7 +94,6 @@ export default function Dashboard() {
     window.location.href = "/login";
   };
 
-  // fetches file uploaded and sets the state file as the uploaded
   const handleFileChange = (e: any) => {
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
@@ -105,7 +104,6 @@ export default function Dashboard() {
     setTextFile(selectedFile);
   };
 
-  // handles how the file is uploaded to ipfs
   const handleAddFile = async (e: any) => {
     e.preventDefault();
     setUploading(true);
@@ -147,7 +145,6 @@ export default function Dashboard() {
       if (fileInputRef.current) {
         fileInputRef.current.value = ""; // Clear the file input field
       }
-      fetchFiles();
     }
   };
 
@@ -192,7 +189,6 @@ export default function Dashboard() {
       if (fileInputRef.current) {
         fileInputRef.current.value = ""; // Clear the file input field
       }
-      fetchFiles();
     }
   };
   const handleRequestFile = async (e: any) => {
@@ -260,6 +256,43 @@ export default function Dashboard() {
         textFileInputRef.current.value = "";
       }
       fetchFiles();
+    }
+  };
+
+  const handleAddPublicTextFile = async (e: any) => {
+    console.log("Inside handleAddPublicTextFile");
+    e.preventDefault();
+    setUploadingText(true);
+
+    if (!textFile) {
+      alert("Please select a text file to upload.");
+      setUploadingText(false);
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      const uid = localStorage.getItem("user_id");
+      formData.append("textFile", textFile); // send file to the backend
+      formData.append("id", uid || "1"); // send id of the user who uploaded the file
+      formData.append("fileName", textFileName);
+
+      const response = await axios.post(
+        "http://localhost:3000/api/public/uploadPublicText",
+        formData
+      );
+      console.log(response);
+      toast.success("Text File Uploaded!");
+    } catch (err) {
+      console.error("Error occurred while uploading text file", err);
+      toast.error("Text file upload failed.");
+    } finally {
+      setUploadingText(false);
+      setTextFileName("");
+      setTextFile(null);
+      if (textFileInputRef.current) {
+        textFileInputRef.current.value = "";
+      }
     }
   };
 
@@ -334,7 +367,12 @@ export default function Dashboard() {
     fetchPublicFiles();
     fetchReqFiles();
     fetchRecivedReqFiles();
-  }, [files.length, reqFiles.length, recievedReqFiles.length]);
+  }, [
+    files.length,
+    reqFiles.length,
+    recievedReqFiles.length,
+    publicFiles.length,
+  ]);
 
   const handleViewFile = async (
     ipfsHash: string,
@@ -415,10 +453,9 @@ export default function Dashboard() {
     try {
       // Send to backend, ipfsHash and id
       const formData = new FormData();
-      
 
       formData.append("cid", ipfsHash); // send file to the backend
-     
+      console.log(ipfsHash, fileType);
       // Determine which endpoint to call based on the file type
       let endpoint = "";
       let responseType = "blob"; // Expect binary data for image files
@@ -1063,7 +1100,7 @@ export default function Dashboard() {
                       </DialogDescription>
                     </DialogHeader>
                     <form
-                      onSubmit={handleAddTextFile}
+                      onSubmit={handleAddPublicTextFile}
                       className="grid gap-4 py-4"
                     >
                       <div className="flex flex-col gap-2">
@@ -1129,7 +1166,7 @@ export default function Dashboard() {
                         {new Date(file.created_at).toLocaleDateString()}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        CID: {file.CID.slice(0, 10)}...
+                        CID: {file.CID.slice(0, 10)}....
                       </p>
                       <Badge variant="outline" className="mt-2">
                         {file.fileType}
