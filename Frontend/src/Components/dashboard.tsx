@@ -10,13 +10,14 @@ import {
   Image as ImageIcon,
   Plus,
   ExternalLink,
-  Key,
   FileInput,
   Paperclip,
   Globe,
+  TrendingUp,
+  Cat,
 } from "lucide-react";
 import axios from "axios";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -49,13 +50,21 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 
 import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "./ui/chart";
+
+import {
   FileData,
   reqFileData,
   recievedReqFileData,
   publicFileData,
+  analyticsData,
 } from "../types";
 import { supabase } from "../supabaseclient";
-
+import { Label, Pie, PieChart } from "recharts";
 export default function Dashboard() {
   // Declaring state variables
   const [productName, setProductName] = useState("");
@@ -81,6 +90,28 @@ export default function Dashboard() {
   const [uploadingText, setUploadingText] = useState(false);
   const textFileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedTab, setSelectedTab] = useState("Dashboard");
+  const [analyticData, setAnalyticsData] = useState<analyticsData | null>(null);
+
+  const chartConfig = {
+    users: {
+      label: "Users",
+      color: "#7c3aed",
+    },
+  } satisfies ChartConfig;
+
+  const chartConfig2 = {
+    publicFiles: {
+      label: "Public Files",
+      color: "#3aed3f",
+    },
+  } satisfies ChartConfig;
+
+  const chartConfig3 = {
+    privateFiles: {
+      label: "Private Files",
+      color: "#ed963a",
+    },
+  } satisfies ChartConfig;
 
   const handleTabClick = (tab: string): void => {
     setSelectedTab(tab);
@@ -361,12 +392,66 @@ export default function Dashboard() {
       setLoadingFiles(false);
     }
   };
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/analytics");
+      setAnalyticsData(response.data);
+      console.log("Analytics data fetched:", response.data);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    }
+  };
+
+  const chartData = useMemo(() => {
+    if (!analyticData) return [];
+    return [
+      {
+        name: "Users",
+        value: analyticData.users,
+        fill: chartConfig.users.color,
+      },
+      // {
+      //   name: "Public Files",
+      //   value: analyticData.publicFiles,
+      //   fill: chartConfig2.publicFiles.color,
+      // },
+      // {
+      //   name: "Private Files",
+      //   value: analyticData.privateFiles,
+      //   fill: chartConfig3.privateFiles.color,
+      // },
+    ];
+  }, [analyticData]);
+  const chartData2 = useMemo(() => {
+    if (!analyticData) return [];
+    return [
+      {
+        name: "Public Files",
+        value: analyticData.publicFiles,
+        fill: chartConfig2.publicFiles.color,
+      },
+    ];
+  }, [analyticData]);
+
+  const chartData3 = useMemo(() => {
+    if (!analyticData) return [];
+    return [
+      {
+        name: "Private Files",
+        value: analyticData.privateFiles,
+        fill: chartConfig3.privateFiles.color,
+      },
+    ];
+  }, [analyticData]);
+
   useEffect(() => {
     setImageURL(localStorage.getItem("avatar_url") || "");
     fetchFiles();
     fetchPublicFiles();
     fetchReqFiles();
     fetchRecivedReqFiles();
+    fetchAnalytics();
   }, [
     files.length,
     reqFiles.length,
@@ -572,7 +657,7 @@ export default function Dashboard() {
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <a href="/" className="flex items-center gap-2 font-semibold">
-              <Key className="h-6 w-6" />
+              <Cat className="h-6 w-6" />
               <span>BTP V1</span>
             </a>
             <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
@@ -618,13 +703,7 @@ export default function Dashboard() {
                 <FileInput className="h-4 w-4" />
                 Received Requests
               </a>
-              <a
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
-              >
-                <LineChart className="h-4 w-4" />
-                Analytics
-              </a>
+
               <a
                 onClick={() => handleTabClick("Public")}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
@@ -635,7 +714,15 @@ export default function Dashboard() {
                 href="#"
               >
                 <Globe className="h-4 w-4" />
-                Public
+                Public Pool
+              </a>
+              <a
+                href="#"
+                onClick={() => handleTabClick("Analytics")}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
+              >
+                <LineChart className="h-4 w-4" />
+                Analytics
               </a>
             </nav>
           </div>
@@ -1186,6 +1273,205 @@ export default function Dashboard() {
                   </Card>
                 ))
               )}
+            </div>
+          </main>
+        )}
+        {selectedTab === "Analytics" && (
+          <main className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-6">
+            <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card className="flex flex-col">
+                <CardHeader className="items-center pb-0">
+                  <CardTitle>Users Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 pb-0">
+                  <ChartContainer
+                    config={chartConfig}
+                    className="mx-auto aspect-square max-h-[250px]"
+                  >
+                    <PieChart>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel />}
+                      />
+                      <Pie
+                        data={chartData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={60}
+                        strokeWidth={5}
+                      >
+                        <Label
+                          content={({ viewBox }) => {
+                            if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                              return (
+                                <text
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                >
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={viewBox.cy}
+                                    className="fill-foreground text-3xl font-bold"
+                                  >
+                                    {analyticData?.users.toLocaleString()}
+                                  </tspan>
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={(viewBox.cy || 0) + 24}
+                                    className="fill-muted-foreground"
+                                  >
+                                    Total
+                                  </tspan>
+                                </text>
+                              );
+                            }
+                          }}
+                        />
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                </CardContent>
+                <CardFooter className="flex-col gap-2 text-sm">
+                  <div className="flex items-center gap-2 font-medium leading-none">
+                    Growth trend: 5.2% this month{" "}
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="leading-none text-muted-foreground">
+                    Showing distribution of public files.
+                  </div>
+                </CardFooter>
+              </Card>
+              <Card className="flex flex-col">
+                <CardHeader className="items-center pb-0">
+                  <CardTitle>Public Files Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 pb-0">
+                  <ChartContainer
+                    config={chartConfig2}
+                    className="mx-auto aspect-square max-h-[250px]"
+                  >
+                    <PieChart>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel />}
+                      />
+                      <Pie
+                        data={chartData2}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={60}
+                        strokeWidth={5}
+                      >
+                        <Label
+                          content={({ viewBox }) => {
+                            if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                              return (
+                                <text
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                >
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={viewBox.cy}
+                                    className="fill-foreground text-3xl font-bold"
+                                  >
+                                    {analyticData?.publicFiles.toLocaleString()}
+                                  </tspan>
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={(viewBox.cy || 0) + 24}
+                                    className="fill-muted-foreground"
+                                  >
+                                    Total
+                                  </tspan>
+                                </text>
+                              );
+                            }
+                          }}
+                        />
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                </CardContent>
+                <CardFooter className="flex-col gap-2 text-sm">
+                  <div className="flex items-center gap-2 font-medium leading-none">
+                    Growth trend: 5.2% this month{" "}
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="leading-none text-muted-foreground">
+                    Showing distribution of users.
+                  </div>
+                </CardFooter>
+              </Card>{" "}
+              <Card className="flex flex-col">
+                <CardHeader className="items-center pb-0">
+                  <CardTitle>Private Files Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 pb-0">
+                  <ChartContainer
+                    config={chartConfig3}
+                    className="mx-auto aspect-square max-h-[250px]"
+                  >
+                    <PieChart>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel />}
+                      />
+                      <Pie
+                        data={chartData3}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={60}
+                        strokeWidth={5}
+                      >
+                        <Label
+                          content={({ viewBox }) => {
+                            if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                              return (
+                                <text
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                >
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={viewBox.cy}
+                                    className="fill-foreground text-3xl font-bold"
+                                  >
+                                    {analyticData?.privateFiles.toLocaleString()}
+                                  </tspan>
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={(viewBox.cy || 0) + 24}
+                                    className="fill-muted-foreground"
+                                  >
+                                    Total
+                                  </tspan>
+                                </text>
+                              );
+                            }
+                          }}
+                        />
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                </CardContent>
+                <CardFooter className="flex-col gap-2 text-sm">
+                  <div className="flex items-center gap-2 font-medium leading-none">
+                    Growth trend: 5.2% this month{" "}
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="leading-none text-muted-foreground">
+                    Showing distribution of private files
+                  </div>
+                </CardFooter>
+              </Card>
             </div>
           </main>
         )}

@@ -1,5 +1,5 @@
 import express from "express";
-import { fetchUserFiles,fetchRequestedFiles,sendFileRequest,fetchRequestReceivedFiles,approveOrRejectFileRequest } from "../controllers/fetchFiles"; // Import the controller
+import { fetchUserFiles,fetchRequestedFiles,sendFileRequest,fetchRequestReceivedFiles,approveOrRejectFileRequest } from "../controllers/fetchFiles.controller"; // Import the controller
 
 const router = express.Router();
 

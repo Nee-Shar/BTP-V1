@@ -5,7 +5,7 @@ import {
   viewImageFile,
   viewTextFile,
   uploadTextToPublic,
-} from "../controllers/publicFilesController";
+} from "../controllers/publicFiles.controller";
 import multer from "multer";
 
 const router = express.Router();

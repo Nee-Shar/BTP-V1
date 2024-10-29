@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { encryptImage, encryptText } from "../controllers/encryptionController";
+import { encryptImage, encryptText } from "../controllers/encryption.controller";
 import multer from "multer";
 
 const router = express.Router();

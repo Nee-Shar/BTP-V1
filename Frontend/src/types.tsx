@@ -39,3 +39,9 @@ export interface publicFileData{
   fileType: string; // text or image
   owner : string;
 }
+
+export interface analyticsData {
+  users: number;
+  publicFiles: number;
+  privateFiles: number;
+}
