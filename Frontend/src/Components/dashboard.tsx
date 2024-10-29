@@ -1,11 +1,8 @@
 import {
-  Bell,
   Home,
   LineChart,
   Menu,
-  Package2,
   Search,
-  ShoppingCart,
   FileText,
   Image as ImageIcon,
   Plus,
@@ -446,7 +443,10 @@ export default function Dashboard() {
   }, [analyticData]);
 
   useEffect(() => {
-    setImageURL(localStorage.getItem("avatar_url") || "");
+    setImageURL(
+      localStorage.getItem("avatar_url") ||
+        "https://w7.pngwing.com/pngs/134/822/png-transparent-computer-icons-business-man-people-logo-recruiter-thumbnail.png"
+    );
     fetchFiles();
     fetchPublicFiles();
     fetchReqFiles();
@@ -654,17 +654,14 @@ export default function Dashboard() {
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <Toaster />
       <div className="hidden border-r bg-muted/40 md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+        <div className="flex h-full fixed max-h-screen flex-col gap-2">
+          <div className="flex  h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <a href="/" className="flex items-center gap-2 font-semibold">
               <Cat className="h-6 w-6" />
               <span>BTP V1</span>
             </a>
-            <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
-              <Bell className="h-4 w-4" />
-            </Button>
           </div>
-          <div className="flex-1">
+          <div className="flex-1  ">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               <a
                 href="#"
@@ -742,19 +739,67 @@ export default function Dashboard() {
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-2 text-lg font-medium">
-                <a
-                  href="#"
-                  className="flex items-center gap-2 text-lg font-semibold"
-                >
-                  <Package2 className="h-6 w-6" />
-                  Acme Inc
+                <a href="/" className="flex items-center gap-2 font-semibold">
+                  <Cat className="h-6 w-6" />
+                  <span>BTP V1</span>
                 </a>
                 <a
                   href="#"
-                  className="flex items-center gap-4 rounded-xl bg-muted px-3 py-2"
+                  onClick={() => handleTabClick("Dashboard")}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                    selectedTab === "Dashboard"
+                      ? "bg-muted text-primary"
+                      : "text-muted-foreground hover:text-primary"
+                  }`}
                 >
-                  <ShoppingCart className="h-5 w-5" />
-                  Requests
+                  <Home className="h-4 w-4" />
+                  Dashboard
+                </a>
+                <a
+                  href="#"
+                  onClick={() => handleTabClick("Requests")}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                    selectedTab === "Requests"
+                      ? "bg-muted text-primary"
+                      : "text-muted-foreground hover:text-primary"
+                  }`}
+                >
+                  <Paperclip className="h-4 w-4" />
+                  Sent Requests
+                </a>
+
+                <a
+                  href="#"
+                  onClick={() => handleTabClick("Approvals")}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                    selectedTab === "Approvals"
+                      ? "bg-muted text-primary"
+                      : "text-muted-foreground hover:text-primary"
+                  }`}
+                >
+                  <FileInput className="h-4 w-4" />
+                  Received Requests
+                </a>
+
+                <a
+                  onClick={() => handleTabClick("Public")}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                    selectedTab === "Public"
+                      ? "bg-muted text-primary"
+                      : "text-muted-foreground hover:text-primary"
+                  }`}
+                  href="#"
+                >
+                  <Globe className="h-4 w-4" />
+                  Public Pool
+                </a>
+                <a
+                  href="#"
+                  onClick={() => handleTabClick("Analytics")}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary"
+                >
+                  <LineChart className="h-4 w-4" />
+                  Analytics
                 </a>
               </nav>
             </SheetContent>
