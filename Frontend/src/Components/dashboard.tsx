@@ -62,6 +62,8 @@ import {
 } from "../types";
 import { supabase } from "../supabaseclient";
 import { Label, Pie, PieChart } from "recharts";
+import { GenerateQRCode } from "./genqr";
+
 export default function Dashboard() {
   // Declaring state variables
   const [productName, setProductName] = useState("");
@@ -1303,6 +1305,9 @@ export default function Dashboard() {
                       <Badge variant="outline" className="mt-2">
                         {file.fileType}
                       </Badge>
+                      <div className="mt-4 flex justify-center">
+  <GenerateQRCode text={`https://ipfs.io/ipfs/${file.CID}`} />
+</div>
                     </CardContent>
                     <CardFooter>
                       <Button
