@@ -11,7 +11,6 @@ import {
   Paperclip,
   Globe,
   TrendingUp,
-  Cat,
 } from "lucide-react";
 import axios from "axios";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -660,8 +659,8 @@ export default function Dashboard() {
           <div className="flex  h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <a href="/" className="flex items-center gap-2 font-semibold">
               {/* <Cat className="h-6 w-6" /> */}
-              
-              <img src='./lgo.png' alt="logo" className="h-8 w-8" />
+
+              <img src="./lgo.png" alt="logo" className="h-8 w-8" />
               <span>Suraksha Setu</span>
             </a>
           </div>
@@ -745,7 +744,7 @@ export default function Dashboard() {
               <nav className="grid gap-2 text-lg font-medium">
                 <a href="/" className="flex items-center gap-2 font-semibold">
                   {/* <Cat className="h-6 w-6" /> */}
-                  <img src='./lgo.png' alt="logo" className="h-6 w-6" />
+                  <img src="./lgo.png" alt="logo" className="h-6 w-6" />
                   <span>Suraksha Setu</span>
                 </a>
                 <a
@@ -1309,8 +1308,10 @@ export default function Dashboard() {
                         {file.fileType}
                       </Badge>
                       <div className="mt-4 flex justify-center">
-  <GenerateQRCode text={`https://ipfs.io/ipfs/${file.CID}`} />
-</div>
+                        <GenerateQRCode
+                          text={`https://ipfs.io/ipfs/${file.CID}`}
+                        />
+                      </div>
                     </CardContent>
                     <CardFooter>
                       <Button
