@@ -11,6 +11,7 @@ import {
   Paperclip,
   Globe,
   TrendingUp,
+  Copy,
 } from "lucide-react";
 import axios from "axios";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -89,6 +90,11 @@ export default function Dashboard() {
   const textFileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedTab, setSelectedTab] = useState("Dashboard");
   const [analyticData, setAnalyticsData] = useState<analyticsData | null>(null);
+
+  const handleCopyCid = (cid: string) => {
+    navigator.clipboard.writeText(cid);
+    toast.success("CID copied to clipboard!");
+  };
 
   const chartConfig = {
     users: {
@@ -945,6 +951,7 @@ export default function Dashboard() {
                             : `url("https://www.hitechnectar.com/wp-content/uploads/2018/07/notepad-jpg-webp.webp")`,
                       }}
                     />
+
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         {file.fileType === "image" ? (
@@ -983,6 +990,14 @@ export default function Dashboard() {
                       >
                         View File
                         <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleCopyCid(file.CID)}
+                        className="ml-2"
+                        variant="outline"
+                      >
+                        Copy CID  
+                        <Copy className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>
@@ -1080,6 +1095,15 @@ export default function Dashboard() {
                       >
                         View File
                         <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleCopyCid(file.cid)}
+                        className="ml-2"
+                        variant="outline"
+                      >
+                        Copy CID 
+                        
+                        <Copy className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>
@@ -1322,6 +1346,15 @@ export default function Dashboard() {
                       >
                         View File
                         <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleCopyCid(file.CID)}
+                        className="ml-2"
+                        variant="outline"
+                      >
+                        Copy CID 
+                        
+                        <Copy className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>

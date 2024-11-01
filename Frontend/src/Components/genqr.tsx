@@ -20,6 +20,8 @@ export function GenerateQRCode({ text }: QRCodeProps): JSX.Element {
       },
       imageOptions: {
         crossOrigin: "anonymous",
+        hideBackgroundDots: true,
+        imageSize: 0.54,
       },
     });
 
