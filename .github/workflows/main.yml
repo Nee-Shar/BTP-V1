@@ -62,7 +62,7 @@ jobs:
           to: ${{ secrets.CHAT_ID }}
           token: ${{ secrets.ACCESS_TOKEN }}
           message: |
-            Commit done in repo BTP-V1.
+            Commit done in repo BTP-V1 ( 🔒 SURAKSHA SETU 🌉).
 
             Commit message: ${{ github.event.head_commit.message }}
 
@@ -74,4 +74,20 @@ jobs:
 
             Backend Build Status: ${{ needs.build-backend.result }}
 
-      
+      - name: Send custom message to User 2
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.HARSH_CHAT_ID }}
+          token: ${{ secrets.ACCESS_TOKEN }}
+          message: |
+            Commit done in repo BTP-V1 ( 🔒 SURAKSHA SETU 🌉).
+
+            Commit message: ${{ github.event.head_commit.message }}
+
+            Committer: ${{ github.actor }}
+
+            Commit URL: ${{ github.event.head_commit.url }}
+
+            Frontend Build Status: ${{ needs.build-frontend.result }}  
+
+            Backend Build Status: ${{ needs.build-backend.result }}
