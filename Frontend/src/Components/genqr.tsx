@@ -12,8 +12,7 @@ export function GenerateQRCode({ text }: QRCodeProps): JSX.Element {
     const qrCode = new QRCodeStyling({
       width: 100,
       height: 100,
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/1/18/Ipfs-logo-1024-ice-text.png",
+      image: "./lgo.png",
 
       dotsOptions: {
         color: "#54de87",

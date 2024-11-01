@@ -659,8 +659,10 @@ export default function Dashboard() {
         <div className="flex h-full fixed max-h-screen flex-col gap-2">
           <div className="flex  h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <a href="/" className="flex items-center gap-2 font-semibold">
-              <Cat className="h-6 w-6" />
-              <span>BTP V1</span>
+              {/* <Cat className="h-6 w-6" /> */}
+              
+              <img src='./lgo.png' alt="logo" className="h-8 w-8" />
+              <span>Suraksha Setu</span>
             </a>
           </div>
           <div className="flex-1  ">
@@ -742,8 +744,9 @@ export default function Dashboard() {
             <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-2 text-lg font-medium">
                 <a href="/" className="flex items-center gap-2 font-semibold">
-                  <Cat className="h-6 w-6" />
-                  <span>BTP V1</span>
+                  {/* <Cat className="h-6 w-6" /> */}
+                  <img src='./lgo.png' alt="logo" className="h-6 w-6" />
+                  <span>Suraksha Setu</span>
                 </a>
                 <a
                   href="#"
