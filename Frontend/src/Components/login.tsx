@@ -64,10 +64,10 @@ export default function SecureFileSystemLogin() {
       <div className="flex flex-col items-center justify-center flex-1 p-10 space-y-10 bg-[hsl(var(--background))]">
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-[hsl(var(--primary))]">
-          Your Files, Fortified
+          Suraksha Setu
           </h1>
           <p className="text-lg text-[hsl(var(--muted-foreground))]">
-          Access, store, and share sensitive files with world-class security
+          Freedom to Share, Power to Protect
           </p>
         </div>
 

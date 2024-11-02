@@ -11,7 +11,7 @@ import {
   Paperclip,
   Globe,
   TrendingUp,
-  Cat,
+  Copy,
 } from "lucide-react";
 import axios from "axios";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -62,6 +62,8 @@ import {
 } from "../types";
 import { supabase } from "../supabaseclient";
 import { Label, Pie, PieChart } from "recharts";
+import { GenerateQRCode } from "./genqr";
+
 export default function Dashboard() {
   // Declaring state variables
   const [productName, setProductName] = useState("");
@@ -88,6 +90,11 @@ export default function Dashboard() {
   const textFileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedTab, setSelectedTab] = useState("Dashboard");
   const [analyticData, setAnalyticsData] = useState<analyticsData | null>(null);
+
+  const handleCopyCid = (cid: string) => {
+    navigator.clipboard.writeText(cid);
+    toast.success("CID copied to clipboard!");
+  };
 
   const chartConfig = {
     users: {
@@ -657,8 +664,10 @@ export default function Dashboard() {
         <div className="flex h-full fixed max-h-screen flex-col gap-2">
           <div className="flex  h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <a href="/" className="flex items-center gap-2 font-semibold">
-              <Cat className="h-6 w-6" />
-              <span>BTP V1</span>
+              {/* <Cat className="h-6 w-6" /> */}
+
+              <img src="./lgo.png" alt="logo" className="h-8 w-8" />
+              <span>Suraksha Setu</span>
             </a>
           </div>
           <div className="flex-1  ">
@@ -740,8 +749,9 @@ export default function Dashboard() {
             <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-2 text-lg font-medium">
                 <a href="/" className="flex items-center gap-2 font-semibold">
-                  <Cat className="h-6 w-6" />
-                  <span>BTP V1</span>
+                  {/* <Cat className="h-6 w-6" /> */}
+                  <img src="./lgo.png" alt="logo" className="h-6 w-6" />
+                  <span>Suraksha Setu</span>
                 </a>
                 <a
                   href="#"
@@ -941,6 +951,7 @@ export default function Dashboard() {
                             : `url("https://www.hitechnectar.com/wp-content/uploads/2018/07/notepad-jpg-webp.webp")`,
                       }}
                     />
+
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         {file.fileType === "image" ? (
@@ -979,6 +990,14 @@ export default function Dashboard() {
                       >
                         View File
                         <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleCopyCid(file.CID)}
+                        className="ml-2"
+                        variant="outline"
+                      >
+                        Copy CID  
+                        <Copy className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>
@@ -1076,6 +1095,15 @@ export default function Dashboard() {
                       >
                         View File
                         <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleCopyCid(file.cid)}
+                        className="ml-2"
+                        variant="outline"
+                      >
+                        Copy CID 
+                        
+                        <Copy className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>
@@ -1303,6 +1331,11 @@ export default function Dashboard() {
                       <Badge variant="outline" className="mt-2">
                         {file.fileType}
                       </Badge>
+                      <div className="mt-4 flex justify-center">
+                        <GenerateQRCode
+                          text={`https://ipfs.io/ipfs/${file.CID}`}
+                        />
+                      </div>
                     </CardContent>
                     <CardFooter>
                       <Button
@@ -1313,6 +1346,15 @@ export default function Dashboard() {
                       >
                         View File
                         <ExternalLink className="ml-2 h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleCopyCid(file.CID)}
+                        className="ml-2"
+                        variant="outline"
+                      >
+                        Copy CID 
+                        
+                        <Copy className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>
