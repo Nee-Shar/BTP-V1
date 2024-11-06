@@ -20,7 +20,7 @@ This project includes a Docker setup for running the backend in a containerized 
 
    ```
 
-4. Create a .env file (if you don’t have one already) : Refer to the .env.example file for the required environment variables.
+4. Create a .env file (if you don’t have one already) : Refer to the .env.sample file for the required environment variables.
 
 5. **Run the Docker container:**
 
