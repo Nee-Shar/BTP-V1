@@ -9,6 +9,9 @@
    npm run dev
    ```
    (Backend runs at http://localhost:3000)
+
+(Alternatively, you can run the backend using Docker. Refer to the [README](Backend/README.md) in the `Backend` directory for instructions.)
+
 5. Navigate to Frontend folder
 6. Fill the secrets in .env file (Refer .env.sample)
 7. Run the following commands
