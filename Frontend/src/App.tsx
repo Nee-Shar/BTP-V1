@@ -49,7 +49,10 @@ function App() {
           path="/"
           element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
         />
-        <Route path="/login" element={<SecureFileSystemLogin />} />
+        <Route
+          path="/login"
+          element={isAuthenticated ? <Dashboard /> : <SecureFileSystemLogin />}
+        />
       </Routes>
     </BrowserRouter>
   );
