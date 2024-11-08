@@ -49,8 +49,8 @@ jobs:
         working-directory: ./Backend
         run: npm run build
 
-  deploy:
-    name: Deploy to Render
+  deploy-backend:
+    name: Deploy Backend to Render
     runs-on: ubuntu-latest
     needs: [build-frontend, build-backend] # Deploy after both builds complete
     steps:
@@ -59,12 +59,22 @@ jobs:
         with:
           service-id: ${{ secrets.MY_RENDER_SERVICE_ID }}
           api-key: ${{ secrets.MY_RENDER_API_KEY }}
-          wait-for-success: true
+
+  deploy-frontend:
+    name: Deploy Frontend to Render
+    runs-on: ubuntu-latest
+    needs: [build-frontend, build-backend] # Deploy after both builds complete
+    steps:
+      - name: Deploy to production
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.HARSH_RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.HARSH_API_KEY }}
 
   notify:
     name: Notify Build Status
     runs-on: ubuntu-latest
-    needs: deploy # Notify after deploy completes
+    needs: [deploy-backend, deploy-frontend] # Notify after deploy completes
     steps:
       - name: Send custom message to User 1
         uses: appleboy/telegram-action@master
@@ -80,12 +90,6 @@ jobs:
 
             Commit URL: ${{ github.event.head_commit.url }}
 
-            Frontend Build Status: ${{ needs.build-frontend.result }}
-
-            Backend Build Status: ${{ needs['build-backend'].result }}
-
-            Deployment Status: ${{ needs.deploy.result }}
-
       - name: Send custom message to User 2
         uses: appleboy/telegram-action@master
         with:
@@ -99,9 +103,3 @@ jobs:
             Committer: ${{ github.actor }}
 
             Commit URL: ${{ github.event.head_commit.url }}
-
-            Frontend Build Status: ${{ needs.build-frontend.result }}
-
-            Backend Build Status: ${{ needs.build-backend.result }}
-
-            Deployment Status: ${{ needs.deploy.result }}
