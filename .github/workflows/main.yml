@@ -1,4 +1,4 @@
-name: Build and Check
+name: Build, Deploy, and Notify
 
 on:
   push:
@@ -12,7 +12,6 @@ jobs:
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -33,7 +32,6 @@ jobs:
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -51,10 +49,22 @@ jobs:
         working-directory: ./Backend
         run: npm run build
 
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: [build-frontend, build-backend] # Deploy after both builds complete
+    steps:
+      - name: Deploy to production
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.MY_RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.MY_RENDER_API_KEY }}
+          wait-for-success: true
+
   notify:
     name: Notify Build Status
     runs-on: ubuntu-latest
-    needs: [build-frontend, build-backend] # Wait for both jobs to finish
+    needs: deploy # Notify after deploy completes
     steps:
       - name: Send custom message to User 1
         uses: appleboy/telegram-action@master
@@ -70,9 +80,11 @@ jobs:
 
             Commit URL: ${{ github.event.head_commit.url }}
 
-            Frontend Build Status: ${{ needs.build-frontend.result }}  
+            Frontend Build Status: ${{ needs.build-frontend.result }}
 
-            Backend Build Status: ${{ needs.build-backend.result }}
+            Backend Build Status: ${{ needs['build-backend'].result }}
+
+            Deployment Status: ${{ needs.deploy.result }}
 
       - name: Send custom message to User 2
         uses: appleboy/telegram-action@master
@@ -88,6 +100,8 @@ jobs:
 
             Commit URL: ${{ github.event.head_commit.url }}
 
-            Frontend Build Status: ${{ needs.build-frontend.result }}  
+            Frontend Build Status: ${{ needs.build-frontend.result }}
 
             Backend Build Status: ${{ needs.build-backend.result }}
+
+            Deployment Status: ${{ needs.deploy.result }}
