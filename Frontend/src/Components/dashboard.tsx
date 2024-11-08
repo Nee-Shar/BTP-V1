@@ -160,7 +160,7 @@ export default function Dashboard() {
 
       try {
         const response = await axios.post(
-          "http://localhost:3000/api/encrypt/encryptImage",
+          `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/api/encrypt/encryptImage`,
           formData
         );
 
@@ -204,7 +204,9 @@ export default function Dashboard() {
 
       try {
         const response = await axios.post(
-          "http://localhost:3000/api/public/uploadPublicImage",
+          `${
+            import.meta.env.VITE_PUBLIC_BACKEND_URL
+          }/api/public/uploadPublicImage`,
           formData
         );
 
@@ -231,7 +233,8 @@ export default function Dashboard() {
     setUploading(true);
     try {
       const response = await axios.post(
-        `http://localhost:3000/api/fetch/requestFile`, // API endpoint
+        `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/api/fetch/requestFile`,
+        // API endpoint
         {
           cid: requestedFileName,
           user_id: localStorage.getItem("user_id"),
@@ -275,7 +278,7 @@ export default function Dashboard() {
       formData.append("fileName", textFileName);
 
       const response = await axios.post(
-        "http://localhost:3000/api/encrypt/encryptText",
+        `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/api/encrypt/encryptText`,
         formData
       );
       console.log(response);
@@ -313,7 +316,9 @@ export default function Dashboard() {
       formData.append("fileName", textFileName);
 
       const response = await axios.post(
-        "http://localhost:3000/api/public/uploadPublicText",
+        `${
+          import.meta.env.VITE_PUBLIC_BACKEND_URL
+        }/api/public/uploadPublicText`,
         formData
       );
       console.log(response);
@@ -337,7 +342,9 @@ export default function Dashboard() {
     try {
       // Call the backend API to fetch files for the given user ID
       const response = await axios.get(
-        `http://localhost:3000/api/fetch/requestedFiles/${uid}`
+        `${
+          import.meta.env.VITE_PUBLIC_BACKEND_URL
+        }/api/fetch/requestedFiles/${uid}`
       );
       setReqFiles(response.data.files); // Assuming backend returns { files: [...] }
       console.log("Files fetched:", response.data.files);
@@ -353,7 +360,7 @@ export default function Dashboard() {
     try {
       // Call the backend API to fetch files for the given user ID
       const response = await axios.get(
-        `http://localhost:3000/api/fetch/files/${uid}`
+        `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/api/fetch/files/${uid}`
       );
       setFiles(response.data.files); // Assuming backend returns { files: [...] }
       console.log("Files fetched:", response.data.files);
@@ -369,7 +376,7 @@ export default function Dashboard() {
     try {
       // Call the backend API to fetch files for the given user ID
       const response = await axios.get(
-        `http://localhost:3000/api/public/fetchPublicFiles`
+        `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/api/public/fetchPublicFiles`
       );
       setPublicFiles(response.data.files); // Assuming backend returns { files: [...] }
       console.log("Files fetched:", response.data.files);
@@ -386,7 +393,9 @@ export default function Dashboard() {
     try {
       // Call the backend API to fetch files for the given user ID
       const response = await axios.get(
-        `http://localhost:3000/api/fetch/receivedRequestedFiles/${uid}`
+        `${
+          import.meta.env.VITE_PUBLIC_BACKEND_URL
+        }/api/fetch/receivedRequestedFiles/${uid}`
       );
       setRecievedReqFiles(response.data.files); // Assuming backend returns { files: [...] }
       console.log("Files fetched:", response.data.files);
@@ -399,7 +408,9 @@ export default function Dashboard() {
 
   const fetchAnalytics = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/analytics");
+      const response = await axios.get(
+        `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/api/analytics`
+      );
       setAnalyticsData(response.data);
       console.log("Analytics data fetched:", response.data);
     } catch (error) {
@@ -483,9 +494,14 @@ export default function Dashboard() {
       let responseType = "blob"; // Expect binary data for image files
 
       if (fileType === "image") {
-        endpoint = "http://localhost:3000/api/decrypt/decryptImage";
+        endpoint = `${
+          import.meta.env.VITE_PUBLIC_BACKEND_URL
+        }/api/decrypt/decryptImage`;
       } else if (fileType === "text") {
-        endpoint = "http://localhost:3000/api/decrypt/decryptText";
+        endpoint = `${
+          import.meta.env.VITE_PUBLIC_BACKEND_URL
+        }/api/decrypt/decryptText`;
+
         responseType = "text"; // For text files, expect plain text as the response
       } else {
         throw new Error("Unsupported file type.");
@@ -553,9 +569,14 @@ export default function Dashboard() {
       let responseType = "blob"; // Expect binary data for image files
 
       if (fileType === "image") {
-        endpoint = "http://localhost:3000/api/public/viewImageFile";
+        endpoint = `${
+          import.meta.env.VITE_PUBLIC_BACKEND_URL
+        }/api/public/viewImageFile`;
       } else if (fileType === "text") {
-        endpoint = "http://localhost:3000/api/public/viewTextFile";
+        endpoint = `${
+          import.meta.env.VITE_PUBLIC_BACKEND_URL
+        }/api/public/viewTextFile`;
+
         responseType = "text"; // For text files, expect plain text as the response
       } else {
         throw new Error("Unsupported file type.");
@@ -620,7 +641,10 @@ export default function Dashboard() {
       const owner_id = localStorage.getItem("user_id");
 
       const response = await axios.post(
-        "http://localhost:3000/api/fetch/acceptOrRejectFileRequest",
+        `${
+          import.meta.env.VITE_PUBLIC_BACKEND_URL
+        }/api/fetch/acceptOrRejectFileRequest`,
+
         {
           cid: cid,
           owner_id: owner_id,
@@ -996,7 +1020,7 @@ export default function Dashboard() {
                         className="ml-2"
                         variant="outline"
                       >
-                        Copy CID  
+                        Copy CID
                         <Copy className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
@@ -1101,8 +1125,7 @@ export default function Dashboard() {
                         className="ml-2"
                         variant="outline"
                       >
-                        Copy CID 
-                        
+                        Copy CID
                         <Copy className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
@@ -1352,8 +1375,7 @@ export default function Dashboard() {
                         className="ml-2"
                         variant="outline"
                       >
-                        Copy CID 
-                        
+                        Copy CID
                         <Copy className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
