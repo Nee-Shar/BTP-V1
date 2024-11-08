@@ -126,7 +126,7 @@ export default function Dashboard() {
     localStorage.removeItem("sb-lbhauoweqnshaojwsesx-auth-token");
     localStorage.removeItem("avatar_url");
     localStorage.removeItem("Name");
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   const handleFileChange = (e: any) => {
